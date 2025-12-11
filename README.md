@@ -1,45 +1,46 @@
-# ZKHNSO Integration for Home Assistant
+# Интеграция ЖКХНСО для Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
-Custom Home Assistant integration for ZKH.
+ZKHNSO integration for Home Assistant. Can be used for integrating housing services in Russian Federation, Novosibirsk oblast. 
 
-## Installation
+Интеграция ЖКХНСО.рф для Home Assistant для получения информации о счетчиках и тарифах.
 
-### HACS (Recommended)
+## Установка
 
-1. Make sure [HACS](https://hacs.xyz/) is installed
-2. Add this repository as a custom repository in HACS
-3. Install "ZKH Integration" from HACS
-4. Restart Home Assistant
-5. Add the integration via Settings > Devices & Services
+### HACS (рекомендованный способ)
 
-### Manual Installation
+1. Установите ЖКХНСО через HACS
+2. Перезапустите Home Assistant
+3. Добавьте интеграцию через Настройки → Устройства и службы
 
-1. Copy the `zkh` folder to `custom_components` in your Home Assistant configuration directory
-2. Restart Home Assistant
-3. Add the integration via Settings > Devices & Services
+### Ручная установка
 
-## Configuration
+1. Скопируйте папку `zkhnso` в папку `custom_components` в вашем Home Assistant
+2. Перезапустите Home Assistant
+3. Добавьте интеграцию через Настройки → Устройства и службы
 
-This integration can be configured via the Home Assistant UI:
+## Настройка
 
-1. Go to Settings > Devices & Services
-2. Click "+ Add Integration"
-3. Search for "ZKH"
-4. Follow the configuration flow
+Эта интеграция может быть настроена через пользовательский интерфейс Home Assistant:
 
-## Features
+1. Откройте Настройки → Устройства и службы
+2. Нажмите "+ Добавить интеграцию"
+3. Поищите "ЖКХНСО"
+4. Заполните параметры учётной записи
 
-- Feature 1
-- Feature 2
-- Feature 3
+## Возможности интеграции
 
-## Support
+- Получать список активных счетчиков (вкл. серийный номер, тип счетчика, дата следующей поверки, текущее значение, дата предыдущей передачи показаний)
+- Получать список тарифов и нормативов
 
-For issues, feature requests, or contributions, please visit the [GitHub repository](https://github.com/yourusername/zkh).
+## Поддержка
 
-## License
+Отчёты об ошибках и предложения, направляйте через [репозиторий на GitHub](https://github.com/zebooka/hacs-zkhnso).
+
+## Лицензия
+
+Этот проект распространяется под открытой лицензией MIT.
 
 This project is licensed under the MIT License.
 
