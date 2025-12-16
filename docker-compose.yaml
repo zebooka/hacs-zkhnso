@@ -1,0 +1,11 @@
+services:
+  homeassistant:
+    container_name: homeassistant-zkhnso
+    image: "ghcr.io/home-assistant/home-assistant:2024.1"
+    volumes:
+      - ./.hass:/config
+      - ./custom_components/zkhnso:/config/custom_components/zkhnso
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    privileged: true
+    network_mode: host
