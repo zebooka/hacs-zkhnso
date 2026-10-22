@@ -2,6 +2,8 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
+<img src="assets/logo@2x.png" alt="ЖКХНСО" width="128"/>
+
 ZKHNSO integration for Home Assistant. Can be used for integrating housing services in Russian Federation, Novosibirsk oblast. 
 
 Интеграция ЖКХНСО.рф для Home Assistant для получения информации о счетчиках и тарифах.

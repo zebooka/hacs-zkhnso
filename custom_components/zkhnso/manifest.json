@@ -1,7 +1,6 @@
 {
   "domain": "zkhnso",
   "name": "ZKHNSO",
-  "categories": ["energy.meters_monitoring","energy.energy_prices"],
   "codeowners": ["@zebooka"],
   "config_flow": true,
   "dependencies": [],
