@@ -28,16 +28,13 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
     Data has the keys from STEP_USER_DATA_SCHEMA with values provided by the user.
     """
-    # TODO: Add validation logic here
-    # For example, check if credentials are valid
-    # If validation fails, raise InvalidAuth
-    
-    # Placeholder validation
-    if not data.get("username") or not data.get("password"):
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+    if not username or not password.strip():
         raise InvalidAuth
 
     # Return info that will be stored in the config entry
-    return {"title": f"ZKHNSO {data['username']}"}
+    return {"title": f"ZKHNSO {username}", "username": username}
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -66,7 +63,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
-            return self.async_create_entry(title=info["title"], data=user_input)
+            await self.async_set_unique_id(info["username"].casefold())
+            self._abort_if_unique_id_configured()
+            entry_data = {**user_input, "username": info["username"]}
+            return self.async_create_entry(title=info["title"], data=entry_data)
 
         return self.async_show_form(
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
@@ -79,4 +79,3 @@ class CannotConnect(HomeAssistantError):
 
 class InvalidAuth(HomeAssistantError):
     """Error to indicate there is invalid auth."""
-

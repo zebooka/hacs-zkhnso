@@ -168,16 +168,24 @@ class ZKHAPIClient:
         preflight_url = urljoin(API_BASE_URL, API_URL_PREFLIGHT)
 
         # Prepare form data
+        query = {
+            "struts.token.name": "loginToken",
+            "loginToken": self.form_token,
+            "userName": self.username,
+            "userPass": self.password,
+            "captchaCode": "x",
+            "timezone": "-420",
+            "loginModule": "lk",
+        }
         form_payload = urlencode(
-            {
-                "struts.token.name": "loginToken",
-                "loginToken": self.form_token,
-                "userName": self.username,
-                "userPass": self.password,
-                "captchaCode": "x",
-                "timezone": "-420",
-                "loginModule": "lk",
-            },
+            query,
+            doseq=False,
+            encoding="utf-8",
+            safe="",
+        )
+
+        masked_form_payload = urlencode(
+            {**query, "userPass": "*" * len(self.password)},
             doseq=False,
             encoding="utf-8",
             safe="",
@@ -195,7 +203,7 @@ class ZKHAPIClient:
             headers["Cookie"] = login_cookie
 
         _LOGGER.debug("Login request headers: %s", headers)
-        _LOGGER.debug("Login form payload: %s", form_payload)
+        _LOGGER.debug("Login form payload: %s", masked_form_payload)
 
         try:
             async with self.session.post(
@@ -607,4 +615,3 @@ class ZKHAPIClient:
         except Exception as e:
             _LOGGER.exception("Unexpected error during meters fetch: %s", e)
             return None
-
