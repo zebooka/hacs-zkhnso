@@ -1,4 +1,4 @@
-.PHONY: help start stop restart update sh
+.PHONY: help start stop restart update sh logo
 .DEFAULT := help
 
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -28,3 +28,7 @@ update: update-container stop start ## Update HA (stop, update, start)
 
 sh: ## Go inside HA container
 	docker exec -it $(HASS) /bin/bash
+
+logo: ## Generate PNG logo assets from SVG (requires ImageMagick)
+	magick assets/logo.svg -resize 128x128 assets/logo.png
+	magick assets/logo.svg -resize 256x256 assets/logo@2x.png

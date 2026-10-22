@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img"
+     aria-label="ZKHNSO logo">
+    <path fill="#aa9a94" fill-rule="evenodd" d="M0 0h128v128H0Z M32 32h64v64H32Z"/>
+    <path fill="#ded7d5" fill-rule="evenodd" d="M128 0h128v128H128Z M160 32h64v64h-64Z"/>
+    <path fill="#6d5c58" fill-rule="evenodd" d="M0 128h128v64h-32v-32H32v64h96v32H0Z"/>
+<!--    <rect x="128" y="128" width="32" height="32" fill="#e31e24"/>-->
+    <text>
+        <tspan fill="#e31e24" x="128" y="166.4" letter-spacing="17.92" font-size="51.2" font-family="PT Mono" font-weight="bold">ЖКХ</tspan>
+        <tspan fill="#e31e24" x="128" y="209.92" letter-spacing="17.92" font-size="51.2" font-family="PT Mono" font-weight="bold">НСО</tspan>
+        <tspan fill="#e31e24" x="128" y="256" letter-spacing="17.92" font-size="51.2" font-family="PT Mono" font-weight="bold">.РФ</tspan>
+    </text>
+</svg>
