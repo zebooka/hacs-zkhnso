@@ -5,6 +5,7 @@ services:
     volumes:
       - ./.hass:/config
       - ./custom_components/zkhnso:/config/custom_components/zkhnso
+      - ./tests:/tests:ro
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
     privileged: true

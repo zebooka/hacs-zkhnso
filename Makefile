@@ -1,4 +1,4 @@
-.PHONY: help start stop restart update sh logo
+.PHONY: help start stop restart update sh logo test
 .DEFAULT := help
 
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -21,14 +21,14 @@ stop: ## Stop
 
 restart: stop start ## Restart
 
-update-container:
-	docker pull ghcr.io/home-assistant/home-assistant:stable
-
-update: update-container stop start ## Update HA (stop, update, start)
-
 sh: ## Go inside HA container
 	docker exec -it $(HASS) /bin/bash
+
+##@ Development
 
 logo: ## Generate PNG logo assets from SVG (requires ImageMagick)
 	magick assets/logo.svg -resize 128x128 assets/logo.png
 	magick assets/logo.svg -resize 256x256 assets/logo@2x.png
+
+test: ## Run integration tests in the Home Assistant Docker image
+	docker exec $(HASS) python -m pytest -p no:cacheprovider /tests
