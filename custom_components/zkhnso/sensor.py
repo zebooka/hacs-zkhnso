@@ -5,13 +5,15 @@ from datetime import timedelta
 import logging
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
+    UpdateFailed,
 )
 
 from .api_client import ZKHAPIClient
@@ -29,20 +31,14 @@ async def async_setup_entry(
 ) -> None:
     """Set up ZKH sensor platform."""
     coordinator = ZKHDataUpdateCoordinator(hass, entry)
-    
-    # Store coordinator in hass.data for potential future use
+
+    # Do not create entities until the first refresh completes. Home Assistant
+    # retries transient failures and starts reauthentication for invalid credentials.
+    await coordinator.async_config_entry_first_refresh()
+
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN].setdefault(entry.entry_id, {})
     hass.data[DOMAIN][entry.entry_id]["coordinator"] = coordinator
-    
-    # Try to fetch initial data
-    try:
-        await coordinator.async_config_entry_first_refresh()
-        _LOGGER.debug("Initial data fetch successful")
-    except Exception as e:
-        _LOGGER.error("Failed to fetch initial data: %s", e, exc_info=True)
-        # Set empty data structure so sensors can still be created
-        coordinator.data = {"meters": {}, "tariffs": {}}
 
     # Create sensors dynamically based on meters and tariffs data
     entities = []
@@ -119,7 +115,7 @@ class ZKHDataUpdateCoordinator(DataUpdateCoordinator):
                 preflight_result = await client.preflight()
                 if not preflight_result:
                     _LOGGER.error("Preflight request failed")
-                    raise Exception("Failed to perform preflight request")
+                    raise UpdateFailed("Failed to perform preflight request")
 
                 _LOGGER.debug("Preflight successful, session initialized")
 
@@ -128,7 +124,7 @@ class ZKHDataUpdateCoordinator(DataUpdateCoordinator):
                 login_success = await client.login()
                 if not login_success:
                     _LOGGER.error("Login failed")
-                    raise Exception("Failed to login")
+                    raise ConfigEntryAuthFailed("Invalid ZKHNSO credentials")
 
                 _LOGGER.debug("Login successful")
 
@@ -137,7 +133,7 @@ class ZKHDataUpdateCoordinator(DataUpdateCoordinator):
                 meters_data = await client.get_meters()
                 if not meters_data:
                     _LOGGER.error("Failed to fetch meters data")
-                    raise Exception("Failed to fetch meters data")
+                    raise UpdateFailed("Failed to fetch meters data")
 
                 meters_count = len(meters_data.get("meters", {}))
                 _LOGGER.info("Fetched %d meters", meters_count)
@@ -162,9 +158,12 @@ class ZKHDataUpdateCoordinator(DataUpdateCoordinator):
                 }
 
                 return combined_data
-        except Exception as e:
-            _LOGGER.error("Error updating ZKH data: %s", e, exc_info=True)
+        except ConfigEntryAuthFailed:
             raise
+        except UpdateFailed:
+            raise
+        except Exception as err:
+            raise UpdateFailed(f"Error updating ZKH data: {err}") from err
 
 
 class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
@@ -275,4 +274,3 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
             "unit": tariff.get("unit"),
             "tariff_date": tariff.get("date"),
         }
-
