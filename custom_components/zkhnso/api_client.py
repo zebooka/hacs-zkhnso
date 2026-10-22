@@ -27,23 +27,25 @@ _LOGGER = logging.getLogger(__name__)
 class ZKHAPIClient:
     """Client for interacting with ZKHNSO API."""
 
-    def __init__(self, username: str, password: str) -> None:
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        session: aiohttp.ClientSession,
+    ) -> None:
         """Initialize the API client."""
         self.username = username
         self.password = password
-        self.session: aiohttp.ClientSession | None = None
+        self.session = session
         self.jsessionid: str | None = None
         self.form_token: str | None = None
 
     async def __aenter__(self) -> ZKHAPIClient:
         """Async context manager entry."""
-        self.session = aiohttp.ClientSession()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Async context manager exit."""
-        if self.session:
-            await self.session.close()
+        """Leave the shared Home Assistant session open."""
 
     async def preflight(self) -> dict[str, str] | None:
         """Perform preflight request to get FORM_TOKEN and JSESSIONID.
@@ -51,9 +53,6 @@ class ZKHAPIClient:
         Returns:
             Dictionary with JSESSIONID and FORM_TOKEN, or None on error
         """
-        if not self.session:
-            self.session = aiohttp.ClientSession()
-
         url = urljoin(API_BASE_URL, API_URL_PREFLIGHT)
 
         try:
@@ -67,7 +66,7 @@ class ZKHAPIClient:
                 # Extract JSESSIONID from Set-Cookie header
                 jsessionid = self._extract_jsessionid(response.headers)
                 if not jsessionid:
-                    _LOGGER.warning("JSESSIONID not found in response headers: %s", response.headers)
+                    _LOGGER.warning("JSESSIONID not found in response")
 
                 # Get HTML content
                 html_content = await response.text()
@@ -86,11 +85,7 @@ class ZKHAPIClient:
                 self.jsessionid = jsessionid
                 self.form_token = form_token
 
-                _LOGGER.debug(
-                    "Preflight successful: JSESSIONID=%s, FORM_TOKEN=%s",
-                    jsessionid[:20] + "..." if jsessionid and len(jsessionid) > 20 else jsessionid,
-                    form_token[:20] + "..." if len(form_token) > 20 else form_token,
-                )
+                _LOGGER.debug("Preflight successful, session initialized")
 
                 return {
                     SESSION_JSESSIONID: jsessionid or "",
@@ -161,9 +156,6 @@ class ZKHAPIClient:
             _LOGGER.error("Preflight must be called before login")
             return False
 
-        if not self.session:
-            self.session = aiohttp.ClientSession()
-
         url = urljoin(API_BASE_URL, API_URL_LOGIN)
         preflight_url = urljoin(API_BASE_URL, API_URL_PREFLIGHT)
 
@@ -202,7 +194,6 @@ class ZKHAPIClient:
         if login_cookie:
             headers["Cookie"] = login_cookie
 
-        _LOGGER.debug("Login request headers: %s", headers)
         _LOGGER.debug("Login form payload: %s", masked_form_payload)
 
         try:
@@ -213,9 +204,9 @@ class ZKHAPIClient:
                 updated_jsessionid = self._extract_jsessionid(response.headers)
                 if updated_jsessionid:
                     self.jsessionid = updated_jsessionid
-                    _LOGGER.debug("JSESSIONID updated after login: %s", updated_jsessionid)
+                    _LOGGER.debug("JSESSIONID updated after login")
                 else:
-                    _LOGGER.warning("JSESSIONID not found in response headers: %s", response.headers)
+                    _LOGGER.warning("JSESSIONID not found in response")
 
                 # Check if login was successful
                 # Typically, successful login returns 200 or redirects
@@ -263,9 +254,6 @@ class ZKHAPIClient:
             _LOGGER.error("Must be logged in to fetch tariffs")
             return None
 
-        if not self.session:
-            self.session = aiohttp.ClientSession()
-
         url = urljoin(API_BASE_URL, API_URL_TARIFFS)
         referer_url = urljoin(API_BASE_URL, API_URL_MAIN)
 
@@ -294,7 +282,7 @@ class ZKHAPIClient:
                 )
 
                 if not rows:
-                    _LOGGER.warning("No table rows found in url %s (headers: %s) tariffs", url, headers)
+                    _LOGGER.warning("No tariff table rows found at %s", url)
                     return {"tariffs": {}}
 
                 # Process rows into tariffs data
@@ -566,9 +554,6 @@ class ZKHAPIClient:
             _LOGGER.error("Must be logged in to fetch meters")
             return None
 
-        if not self.session:
-            self.session = aiohttp.ClientSession()
-
         url = urljoin(API_BASE_URL, API_URL_METERS)
         referer_url = urljoin(API_BASE_URL, API_URL_MAIN)
 
@@ -580,12 +565,6 @@ class ZKHAPIClient:
             "Cookie": cookie_header,
             "Referer": referer_url,
         }
-
-        _LOGGER.debug(
-            "Meters request prepared with headers=%s and cookie_header=%s",
-            headers,
-            cookie_header,
-        )
 
         try:
             async with self.session.get(url, headers=headers) as response:
@@ -603,7 +582,7 @@ class ZKHAPIClient:
                 )
 
                 if not rows:
-                    _LOGGER.warning("No table rows found in url %s (headers: %s) meters", url, headers)
+                    _LOGGER.warning("No meter table rows found at %s", url)
                     return {"meters": {}, "date": None}
 
                 # Process rows into meters data

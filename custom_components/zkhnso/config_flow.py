@@ -10,8 +10,10 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN
+from .api_client import ZKHAPIClient
+from .const import CONF_PASSWORD, CONF_USERNAME, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +35,12 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     if not username or not password.strip():
         raise InvalidAuth
 
-    # Return info that will be stored in the config entry
+    async with ZKHAPIClient(username, password, async_get_clientsession(hass)) as client:
+        if not await client.preflight():
+            raise CannotConnect
+        if not await client.login():
+            raise InvalidAuth
+
     return {"title": f"ZKHNSO {username}", "username": username}
 
 
@@ -42,13 +49,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
+    async def _async_step_credentials(
+        self, user_input: dict[str, Any] | None, *, reauth: bool = False
     ) -> FlowResult:
-        """Handle the initial step."""
+        """Validate credentials and create or update a config entry."""
         if user_input is None:
             return self.async_show_form(
-                step_id="user", data_schema=STEP_USER_DATA_SCHEMA
+                step_id="reauth_confirm" if reauth else "user",
+                data_schema=STEP_USER_DATA_SCHEMA,
             )
 
         errors = {}
@@ -63,14 +71,50 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
+            entry_data = {
+                CONF_USERNAME: info["username"],
+                CONF_PASSWORD: user_input[CONF_PASSWORD],
+            }
+            if reauth:
+                self.hass.config_entries.async_update_entry(
+                    self._get_reauth_entry(),
+                    data=entry_data,
+                )
+                await self.hass.config_entries.async_reload(
+                    self._get_reauth_entry().entry_id
+                )
+                return self.async_abort(reason="reauth_successful")
+
             await self.async_set_unique_id(info["username"].casefold())
             self._abort_if_unique_id_configured()
-            entry_data = {**user_input, "username": info["username"]}
             return self.async_create_entry(title=info["title"], data=entry_data)
 
         return self.async_show_form(
-            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
+            step_id="reauth_confirm" if reauth else "user",
+            data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
         )
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle initial configuration."""
+        return await self._async_step_credentials(user_input)
+
+    async def async_step_reauth(
+        self, entry_data: dict[str, Any]
+    ) -> FlowResult:
+        """Handle reauthentication initiated by Home Assistant."""
+        self.context["title_placeholders"] = {
+            "name": self._get_reauth_entry().title,
+        }
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Confirm updated credentials."""
+        return await self._async_step_credentials(user_input, reauth=True)
 
 
 class CannotConnect(HomeAssistantError):

@@ -8,6 +8,14 @@
           "username": "Username",
           "password": "Password"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect ZKHNSO",
+        "description": "Update the credentials for {name}",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -16,7 +24,8 @@
       "unknown": "Unexpected error occurred"
     },
     "abort": {
-      "already_configured": "ZKHNSO is already configured"
+      "already_configured": "ZKHNSO is already configured",
+      "reauth_successful": "ZKHNSO credentials were updated"
     }
   }
 }
