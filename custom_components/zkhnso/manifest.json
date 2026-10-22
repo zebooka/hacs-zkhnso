@@ -1,6 +1,7 @@
 {
   "domain": "zkhnso",
   "name": "ZKHNSO",
+  "categories": ["energy.meters_monitoring","energy.energy_prices"],
   "codeowners": ["@zebooka"],
   "config_flow": true,
   "dependencies": [],
@@ -8,6 +9,6 @@
   "integration_type": "hub",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/zebooka/hacs-zkhnso/issues",
-  "requirements": ["beautifulsoup4==4.13.3"],
+  "requirements": ["beautifulsoup4>=4.13.3"],
   "version": "0.1.0"
 }
