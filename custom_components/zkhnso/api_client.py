@@ -354,7 +354,7 @@ class ZKHAPIClient:
 
         for row in data_rows:
             _LOGGER.debug("Row: %s", row)
-            if len(row) < 6:
+            if len(row) < 9:
                 _LOGGER.warning("Row has insufficient columns: %s", row)
                 continue
 
@@ -374,12 +374,12 @@ class ZKHAPIClient:
                 next_verification_date_str = row[8].strip()
                 _LOGGER.debug("METER Type: %s, Units: %s, Serial №: %s, Date: %s, Value: %s, Next V: %s", type_name, units, serial_number, value_date_str, value_str, next_verification_date_str)
 
-                # Parse value as number and floor it
+                # Parse value without losing fractional meter readings.
                 try:
-                    value = int(float(value_str))
+                    value = float(value_str.replace("\u00a0", "").replace(" ", "").replace(",", "."))
                 except (ValueError, TypeError):
                     _LOGGER.warning("Failed to parse value '%s' as number", value_str)
-                    value = 0
+                    continue
 
                 # Parse dates
                 value_date = self._parse_date(value_date_str)

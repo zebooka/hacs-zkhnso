@@ -5,8 +5,13 @@ from datetime import timedelta
 import logging
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -22,6 +27,8 @@ from .const import CONF_PASSWORD, CONF_USERNAME, DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(hours=1)
+
+WATER_UNITS = {"куб.м.", "куб.м", "м³", "m³"}
 
 
 async def async_setup_entry(
@@ -178,21 +185,16 @@ class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
         """Initialize the meter sensor."""
         super().__init__(coordinator)
 
-        units_to_device_class = {
-            "куб.м.": "water",
-        }
-
-        units_to_measurement = {
-            "куб.м.": "m³",
-        }
-
         self.meter_key = meter_key
         self._attr_unique_id = f"{self.coordinator.entry.entry_id}_meter_{meter_key}"
         self._attr_name = meter_data.get("name", f"Meter {meter_key}")
-        self._attr_device_class = units_to_device_class.get(meter_data.get("units"), "energy")
-        self._attr_state_class = "total_increasing"
         self._attr_icon = "mdi:counter"
-        self._attr_native_unit_of_measurement = units_to_measurement.get(meter_data.get("units"), "None")
+
+        if meter_data.get("units") in WATER_UNITS:
+            self._attr_device_class = SensorDeviceClass.WATER
+            self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
+            # A provider can correct or reset the total reading.
+            self._attr_state_class = SensorStateClass.TOTAL
 
     @property
     def native_value(self) -> float | None:
@@ -202,8 +204,8 @@ class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
 
         meters = self.coordinator.data["meters"]
         meter = meters.get(self.meter_key)
-        if meter:
-            return float(meter.get("value", 0))
+        if meter and isinstance(meter.get("value"), int | float):
+            return meter["value"]
         return None
 
     @property
@@ -239,10 +241,9 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self.tariff_key = tariff_key
         self._attr_unique_id = f"{self.coordinator.entry.entry_id}_tariff_{tariff_key}"
-        self._attr_name = f"{tariff_data.get('name', f"Tariff {tariff_key}")}"
-        self._attr_device_class = None  # Tariffs don't have a specific device class
-        self._attr_native_unit_of_measurement = f"{tariff_data.get('unit', '')}/руб" if tariff_data.get('unit') else "руб"
-        self._attr_state_class = None  # Tariffs are not measured values
+        self._attr_name = tariff_data.get("name", f"Tariff {tariff_key}")
+        unit = tariff_data.get("unit")
+        self._attr_native_unit_of_measurement = f"RUB/{unit}" if unit else "RUB"
         self._attr_icon = "mdi:currency-rub"
 
     @property
@@ -253,8 +254,8 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
 
         tariffs = self.coordinator.data["tariffs"]
         tariff = tariffs.get(self.tariff_key)
-        if tariff:
-            return float(tariff.get("tariff", 0))
+        if tariff and isinstance(tariff.get("tariff"), int | float):
+            return tariff["tariff"]
         return None
 
     @property
