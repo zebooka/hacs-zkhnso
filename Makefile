@@ -27,8 +27,11 @@ sh: ## Go inside HA container
 ##@ Development
 
 logo: ## Generate PNG logo assets from SVG (requires ImageMagick)
-	magick assets/logo.svg -resize 128x128 assets/logo.png
-	magick assets/logo.svg -resize 256x256 assets/logo@2x.png
+	magick -background none -define svg:background-color=none assets/logo.svg -resize 128x128 assets/logo.png
+	magick -background none -define svg:background-color=none assets/logo.svg -resize 256x256 assets/logo@2x.png
+	test `uname` = 'Darwin' && /Applications/ImageOptim.app/Contents/MacOS/ImageOptim assets/logo.png assets/logo@2x.png || true
+	cp assets/logo@2x.png custom_components/zkhnso/brand/icon.png
+	cp assets/logo@2x.png custom_components/zkhnso/brand/icon.png
 
 test: ## Run integration tests in the Home Assistant Docker image
 	docker exec $(HASS) python -m pytest -p no:cacheprovider /tests
