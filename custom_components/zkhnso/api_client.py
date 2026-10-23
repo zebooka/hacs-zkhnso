@@ -281,9 +281,9 @@ class ZKHAPIClient:
                 "tariffs": {
                     "tariff_name": {
                         "name": "...",
-                        "rate": 123.45,
-                        "unit": "m³",
-                        "tariff": 67.89,
+                        "norm": 123.45,
+                        "unit": "куб.м.",
+                        "rate": 67.89,
                         "date": "YYYY-MM-DD"
                     }
                 }
@@ -443,9 +443,9 @@ class ZKHAPIClient:
             try:
                 tariff = {
                     "name": row[0].strip(),
-                    "rate": self._parse_float(row[1].strip()),
+                    "norm": self._parse_float(row[1].strip()),
                     "unit": row[2].strip(),
-                    "tariff": self._parse_float(row[3].strip()),
+                    "rate": self._parse_float(row[3].strip()),
                     "date": self._parse_date(row[4].strip()),
                 }
 

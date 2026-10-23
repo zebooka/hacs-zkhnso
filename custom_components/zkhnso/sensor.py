@@ -154,9 +154,9 @@ class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
             return {}
 
         return {
+            "type_name": meter.get("type_name"),
             "serial_number": meter.get("serial_number"),
             "units": meter.get("units"),
-            "type_name": meter.get("type_name"),
             "value_date": meter.get("value_date"),
             "next_verification_date": meter.get("next_verification_date"),
         }
@@ -175,7 +175,7 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self.tariff_key = tariff_key
         self._attr_unique_id = f"{self.coordinator.entry.entry_id}_tariff_{tariff_key}"
-        tariff_name = tariff_data.get("name", f"Tariff {tariff_key}")
+        tariff_name = tariff_data.get("name", tariff_key)
         account_id = self.coordinator.entry.data.get(
             CONF_ACCOUNT_ID,
             self.coordinator.entry.data[CONF_USERNAME],
@@ -212,8 +212,8 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
 
         tariffs = self.coordinator.data["tariffs"]
         tariff = tariffs.get(self.tariff_key)
-        if tariff and isinstance(tariff.get("tariff"), int | float):
-            return tariff["tariff"]
+        if tariff and isinstance(tariff.get("rate"), int | float):
+            return tariff["rate"]
         return None
 
     @property
@@ -229,7 +229,7 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
 
         return {
             "name": tariff.get("name"),
-            "rate": tariff.get("rate"),
+            "norm": tariff.get("norm"),
             "unit": tariff.get("unit"),
             "tariff_unit": self._tariff_unit,
             "tariff_date": tariff.get("date"),
