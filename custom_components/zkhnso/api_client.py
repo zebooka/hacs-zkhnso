@@ -28,10 +28,10 @@ class ZKHAPIClient:
     """Client for interacting with ZKHNSO API."""
 
     def __init__(
-        self,
-        username: str,
-        password: str,
-        session: aiohttp.ClientSession,
+            self,
+            username: str,
+            password: str,
+            session: aiohttp.ClientSession,
     ) -> None:
         """Initialize the API client."""
         self.username = username
@@ -150,15 +150,15 @@ class ZKHAPIClient:
     def _is_login_page(html_content: str) -> bool:
         """Return whether an HTML response contains the login form."""
         return (
-            'id="loginForm"' in html_content
-            or "id='loginForm'" in html_content
-            or 'name="loginToken"' in html_content
-            or "name='loginToken'" in html_content
+                'id="loginForm"' in html_content
+                or "id='loginForm'" in html_content
+                or 'name="loginToken"' in html_content
+                or "name='loginToken'" in html_content
         )
 
     @staticmethod
     def _log_page_diagnostics(
-        page_name: str, response: aiohttp.ClientResponse, html_content: str
+            page_name: str, response: aiohttp.ClientResponse, html_content: str
     ) -> None:
         """Log safe response markers without exposing response content or secrets."""
         _LOGGER.debug(
@@ -215,7 +215,7 @@ class ZKHAPIClient:
 
         try:
             async with self.session.post(
-                url, data=form_payload, headers=headers
+                    url, data=form_payload, headers=headers
             ) as response:
                 response_text = await response.text()
                 self._log_page_diagnostics("Login", response, response_text)
@@ -364,63 +364,38 @@ class ZKHAPIClient:
                 continue
 
             try:
-                # Extract data from row cells
-                # [0] - type name
-                # [1] - serial number
-                # [2] - units of measurement
-                # [3] - value date (DD.MM.YYYY)
-                # [4] - value (number)
-                # [8] - next verification date (DD.MM.YYYY)
                 type_name = row[0].strip()
                 serial_number = row[1].strip()
-                units = row[2].strip()
-                value_date_str = row[3].strip()
-                value_str = row[4].strip()
-                next_verification_date_str = row[8].strip()
-                _LOGGER.debug("METER Type: %s, Units: %s, Serial №: %s, Date: %s, Value: %s, Next V: %s", type_name, units, serial_number, value_date_str, value_str, next_verification_date_str)
-
-                # Parse value without losing fractional meter readings.
-                try:
-                    value = float(value_str.replace("\u00a0", "").replace(" ", "").replace(",", "."))
-                except (ValueError, TypeError):
-                    _LOGGER.warning("Failed to parse value '%s' as number", value_str)
-                    continue
-
-                # Parse dates
-                value_date = self._parse_date(value_date_str)
-                next_verification_date = self._parse_date(next_verification_date_str)
+                value_date = self._parse_date(row[3].strip())
+                key = self._sanitize_serial_number(serial_number)
 
                 if value_date:
                     dates.append(value_date)
 
-                # Create meter object
                 meter = {
                     "name": f"{type_name} №{serial_number}",
-                    "units": units,
+                    "units": row[2].strip(),
                     "serial_number": serial_number,
                     "type_name": type_name,
-                    "value": value,
+                    "value": self._parse_float(row[4].strip()),
                     "value_date": value_date,
-                    "next_verification_date": next_verification_date,
+                    "next_verification_date": self._parse_date(row[8].strip()),
                 }
 
-                _LOGGER.debug("Meter: %s", meter)
-
-                # Use sanitized serial number as key
-                key = self._sanitize_serial_number(serial_number)
+                _LOGGER.debug("Meter %s: %s", key, meter)
                 meters[key] = meter
 
             except (IndexError, AttributeError) as e:
                 _LOGGER.warning("Error processing row %s: %s", row, e)
                 continue
 
-        # Find max date
-        max_date = max(dates) if dates else None
-
-        return {"meters": meters, "date": max_date}
+        return {
+            "meters": meters,
+            "date": max(dates) if dates else None,
+        }
 
     def _process_tariffs_data(self, rows: list[list[str]]) -> dict[str, Any]:
-        """Process table rows into tariffs data structure (similar to JQ transformation).
+        """Process table rows into tariffs data structure
 
         Args:
             rows: List of table rows, where each row is a list of cell text values
@@ -441,46 +416,17 @@ class ZKHAPIClient:
                 continue
 
             try:
-                # Extract data from row cells based on JQ logic
-                # [0] - name
-                # [1] - norm
-                # [2] - units of measurement
-                # [3] - tariff
-                # [4] - date (DD.MM.YYYY)
-                name = row[0].strip()
-                norm = row[1].strip()
-                units = row[2].strip()
-                tariff_value = row[3].strip()
-                date_str = row[4].strip()
-
-                _LOGGER.debug("TARIFF Name: %s, Norm %s, Unit: %s, Tariff: %s, Date: %s",
-                            name, norm, units, tariff_value, date_str)
-
-                # Parse rate (remove spaces, convert comma to dot)
-                norm = self._extract_norm(norm)
-
-                # Map Russian units to standard symbols
-                unit = self._map_unit(units)
-
-                # Parse tariff (remove spaces, convert comma to dot)
-                tariff = self._extract_tariff(tariff_value)
-
-                # Parse date
-                date = self._parse_date(date_str)
-
-                # Create tariff object
-                tariff_obj = {
-                    "name": name,
-                    "rate": norm,
-                    "unit": unit,
-                    "tariff": tariff,
-                    "date": date,
+                tariff = {
+                    "name": row[0].strip(),
+                    "rate": self._parse_float(row[1].strip()),
+                    "unit": self._map_russian_unit(row[2].strip()),
+                    "tariff": self._parse_float(row[3].strip()),
+                    "date": self._parse_date(row[4].strip()),
                 }
 
-                _LOGGER.debug("Processed tariff: %s", tariff_obj)
+                _LOGGER.debug("Processed tariff: %s", tariff)
 
-                # Use name as key
-                tariffs[name] = tariff_obj
+                tariffs[tariff["name"]] = tariff
 
             except (IndexError, AttributeError) as e:
                 _LOGGER.warning("Error processing tariff row %s: %s", row, e)
@@ -488,47 +434,25 @@ class ZKHAPIClient:
 
         return {"tariffs": tariffs}
 
-    def _extract_norm(self, norm_str: str) -> float | None:
-        """Extract and parse rate from string.
+    def _parse_float(self, value_str: str) -> float | None:
+        """Extract and parse float value from string.
 
         Args:
-            norm_str: Norm string (may contain spaces and commas)
+            value_str: Value string (may contain nbsp, spaces and commas)
 
         Returns:
-            Parsed rate as float or None on error
+            Parsed value as float or None on error
         """
-        if not norm_str:
+        if not value_str:
             return None
 
         try:
-            # Remove spaces and convert comma to dot
-            cleaned = norm_str.replace(" ", "").replace(",", ".")
-            return float(cleaned)
+            return float(value_str.replace("\u00a0", "").replace(" ", "").replace(",", "."))
         except (ValueError, TypeError) as e:
-            _LOGGER.warning("Failed to parse norm '%s': %s", norm_str, e)
+            _LOGGER.warning("Failed to parse float value '%s': %s", value_str, e)
             return None
 
-    def _extract_tariff(self, tariff_str: str) -> float | None:
-        """Extract and parse tariff from string.
-
-        Args:
-            tariff_str: Tariff string (may contain spaces and commas)
-
-        Returns:
-            Parsed tariff as float or None on error
-        """
-        if not tariff_str:
-            return None
-
-        try:
-            # Remove spaces and convert comma to dot
-            cleaned = tariff_str.replace(" ", "").replace(",", ".")
-            return float(cleaned)
-        except (ValueError, TypeError) as e:
-            _LOGGER.warning("Failed to parse tariff '%s': %s", tariff_str, e)
-            return None
-
-    def _map_unit(self, unit_str: str) -> str:
+    def _map_russian_unit(self, unit_str: str) -> str:
         """Map Russian unit names to standard symbols of HASS.
 
         Args:
