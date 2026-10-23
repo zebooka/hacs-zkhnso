@@ -12,6 +12,8 @@ API_URL_MAIN = "main.action"
 
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
+CONF_ACCOUNT_ID = "account_id"
+CONF_ADDRESS = "address"
 
 # Session keys
 SESSION_JSESSIONID = "JSESSIONID"

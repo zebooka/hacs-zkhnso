@@ -39,6 +39,7 @@ class ZKHAPIClient:
         self.jsessionid: str | None = None
         self.form_token: str | None = None
         self.address: str | None = None
+        self.account_id: int | None = None
 
     async def __aenter__(self) -> ZKHAPIClient:
         """Create an HTTP session and cookie jar isolated to this client."""
@@ -244,6 +245,16 @@ class ZKHAPIClient:
                     )
                     if isinstance(address, str):
                         self.address = " ".join(address.split()) or None
+
+                    account_id = html_to_json_simple(
+                        response_text,
+                        ".header .account span",
+                    )
+                    if isinstance(account_id, str):
+                        account_id = "".join(account_id.split())
+                        if account_id.isdecimal():
+                            self.account_id = int(account_id)
+
                     _LOGGER.debug("Login response accepted")
                     return True
 

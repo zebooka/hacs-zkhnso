@@ -21,6 +21,7 @@
     "error": {
       "cannot_connect": "Unable to connect to ZKHNSO",
       "invalid_auth": "Invalid authentication",
+      "account_parse_error": "Unable to determine the account number or address",
       "unknown": "Unexpected error occurred"
     },
     "abort": {

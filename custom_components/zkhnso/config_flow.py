@@ -12,7 +12,13 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
 from .api_client import ZKHAPIClient
-from .const import CONF_PASSWORD, CONF_USERNAME, DOMAIN
+from .const import (
+    CONF_ACCOUNT_ID,
+    CONF_ADDRESS,
+    CONF_PASSWORD,
+    CONF_USERNAME,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,12 +47,17 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
             raise InvalidAuth
 
         address = client.address
+        account_id = client.account_id
 
-    title = f"ЛC {username}"
-    if address:
-        title = f"{title} {address}"
+    if account_id is None or not address:
+        raise AccountParseError
 
-    return {"title": title, "username": username}
+    return {
+        "title": f"ЛС {account_id} {address}",
+        "username": username,
+        "account_id": account_id,
+        "address": address,
+    }
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -72,6 +83,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors["base"] = "cannot_connect"
         except InvalidAuth:
             errors["base"] = "invalid_auth"
+        except AccountParseError:
+            errors["base"] = "account_parse_error"
         except Exception:  # pylint: disable=broad-except
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
@@ -79,11 +92,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             entry_data = {
                 CONF_USERNAME: info["username"],
                 CONF_PASSWORD: user_input[CONF_PASSWORD],
+                CONF_ACCOUNT_ID: info["account_id"],
+                CONF_ADDRESS: info["address"],
             }
             if reauth:
                 self.hass.config_entries.async_update_entry(
                     self._get_reauth_entry(),
                     data=entry_data,
+                    title=info["title"],
                 )
                 await self.hass.config_entries.async_reload(
                     self._get_reauth_entry().entry_id
@@ -128,3 +144,7 @@ class CannotConnect(HomeAssistantError):
 
 class InvalidAuth(HomeAssistantError):
     """Error to indicate there is invalid auth."""
+
+
+class AccountParseError(HomeAssistantError):
+    """Error to indicate account details could not be parsed after login."""
