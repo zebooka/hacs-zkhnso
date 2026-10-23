@@ -444,7 +444,7 @@ class ZKHAPIClient:
                 tariff = {
                     "name": row[0].strip(),
                     "rate": self._parse_float(row[1].strip()),
-                    "unit": self._map_russian_unit(row[2].strip()),
+                    "unit": row[2].strip(),
                     "tariff": self._parse_float(row[3].strip()),
                     "date": self._parse_date(row[4].strip()),
                 }
@@ -476,24 +476,6 @@ class ZKHAPIClient:
         except (ValueError, TypeError) as e:
             _LOGGER.warning("Failed to parse float value '%s': %s", value_str, e)
             return None
-
-    def _map_russian_unit(self, unit_str: str) -> str:
-        """Map Russian unit names to standard symbols of HASS.
-
-        Args:
-            unit_str: Russian unit string
-
-        Returns:
-            Mapped unit string
-        """
-        unit_mapping = {
-            "кв.м": "m²",
-            "куб.м.": "m³",
-            "кВтч": "kWh",
-            "Гкал": "Gcal",
-        }
-
-        return unit_mapping.get(unit_str, unit_str)
 
     async def get_meters(self) -> dict[str, Any] | None:
         """Fetch meters/counters data.

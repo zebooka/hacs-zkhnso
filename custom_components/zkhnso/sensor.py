@@ -10,7 +10,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfEnergy, UnitOfVolume
+from homeassistant.const import UnitOfArea, UnitOfEnergy, UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -20,6 +20,7 @@ from .coordinator import ZKHDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+SQUARE_UNITS = {"кв.м.", "кв.м", "м²", "m²"}
 VOLUME_UNITS = {"куб.м.", "куб.м", "м³", "m³"}
 ELECTRIC_UNITS = {"кВтч", "кВт·ч", "кВт⋅ч", "kWh"}
 HEAT_UNITS = {"Гкал", "Gcal"}
@@ -185,8 +186,21 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
             "account_id": str(account_id),
         }
         unit = tariff_data.get("unit")
-        self._attr_native_unit_of_measurement = f"RUB/{unit}" if unit else "RUB"
+        self._attr_native_unit_of_measurement = self._tariff_unit(unit)
         self._attr_icon = "mdi:currency-rub"
+
+    @staticmethod
+    def _tariff_unit(unit: str | None) -> str:
+        """Return a normalized tariff unit using the meter unit mappings."""
+        if unit in SQUARE_UNITS:
+            return f"RUB/{UnitOfArea.SQUARE_METERS}"
+        if unit in VOLUME_UNITS:
+            return f"RUB/{UnitOfVolume.CUBIC_METERS}"
+        if unit in ELECTRIC_UNITS:
+            return f"RUB/{UnitOfEnergy.KILO_WATT_HOUR}"
+        if unit in HEAT_UNITS:
+            return f"RUB/{UnitOfEnergy.GIGA_CALORIE}"
+        return f"RUB/{unit}" if unit else "RUB"
 
     @property
     def native_value(self) -> float | None:
