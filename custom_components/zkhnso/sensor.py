@@ -186,11 +186,13 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
             "account_id": str(account_id),
         }
         unit = tariff_data.get("unit")
-        self._attr_native_unit_of_measurement = self._tariff_unit(unit)
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_native_unit_of_measurement = "RUB"
+        self._tariff_unit = self._normalized_tariff_unit(unit)
         self._attr_icon = "mdi:currency-rub"
 
     @staticmethod
-    def _tariff_unit(unit: str | None) -> str:
+    def _normalized_tariff_unit(unit: str | None) -> str:
         """Return a normalized tariff unit using the meter unit mappings."""
         if unit in SQUARE_UNITS:
             return f"RUB/{UnitOfArea.SQUARE_METERS}"
@@ -229,5 +231,6 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
             "name": tariff.get("name"),
             "rate": tariff.get("rate"),
             "unit": tariff.get("unit"),
+            "tariff_unit": self._tariff_unit,
             "tariff_date": tariff.get("date"),
         }
