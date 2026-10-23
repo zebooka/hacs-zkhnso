@@ -99,12 +99,16 @@ class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
 
         self.meter_key = meter_key
         self._attr_unique_id = f"{self.coordinator.entry.entry_id}_meter_{meter_key}"
-        meter_name = meter_data.get("name", f"Meter {meter_key}")
+        meter_name = meter_data.get("name", meter_key)
         account_id = self.coordinator.entry.data.get(
             CONF_ACCOUNT_ID,
             self.coordinator.entry.data[CONF_USERNAME],
         )
-        self._attr_name = f"{meter_name} ({account_id})"
+        self._attr_translation_key = "meter"
+        self._attr_translation_placeholders = {
+            "name": str(meter_name),
+            "account_id": str(account_id),
+        }
         self._attr_icon = "mdi:counter"
         self._attr_state_class = SensorStateClass.TOTAL
 
@@ -175,7 +179,11 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
             CONF_ACCOUNT_ID,
             self.coordinator.entry.data[CONF_USERNAME],
         )
-        self._attr_name = f"{tariff_name} ({account_id})"
+        self._attr_translation_key = "tariff"
+        self._attr_translation_placeholders = {
+            "name": str(tariff_name),
+            "account_id": str(account_id),
+        }
         unit = tariff_data.get("unit")
         self._attr_native_unit_of_measurement = f"RUB/{unit}" if unit else "RUB"
         self._attr_icon = "mdi:currency-rub"

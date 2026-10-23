@@ -28,5 +28,15 @@
       "already_configured": "ZKHNSO is already configured",
       "reauth_successful": "ZKHNSO credentials were updated"
     }
+  },
+  "entity": {
+    "sensor": {
+      "meter": {
+        "name": "Meter {type_name} №{serial_number} ({account_id})"
+      },
+      "tariff": {
+        "name": "Tariff {name} ({account_id})"
+      }
+    }
   }
 }

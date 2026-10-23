@@ -392,19 +392,16 @@ class ZKHAPIClient:
                 continue
 
             try:
-                type_name = row[0].strip()
-                serial_number = row[1].strip()
+                key = self._sanitize_serial_number(row[1].strip())
                 value_date = self._parse_date(row[3].strip())
-                key = self._sanitize_serial_number(serial_number)
 
                 if value_date:
                     dates.append(value_date)
 
                 meter = {
-                    "name": f"{type_name} №{serial_number}",
+                    "type_name": row[0].strip(),
+                    "serial_number": row[1].strip(),
                     "units": row[2].strip(),
-                    "serial_number": serial_number,
-                    "type_name": type_name,
                     "value": self._parse_float(row[4].strip()),
                     "value_date": value_date,
                     "next_verification_date": self._parse_date(row[8].strip()),
@@ -506,10 +503,9 @@ class ZKHAPIClient:
             {
                 "meters": {
                     "serial_key": {
-                        "name": "...",
-                        "units": "...",
-                        "serial_number": "...",
                         "type_name": "...",
+                        "serial_number": "...",
+                        "units": "...",
                         "value": 123,
                         "value_date": "YYYY-MM-DD",
                         "next_verification_date": "YYYY-MM-DD"

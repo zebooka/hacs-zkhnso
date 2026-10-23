@@ -28,5 +28,15 @@
       "already_configured": "Интеграция ЖКХНСО уже настроена",
       "reauth_successful": "Учётные данные ЖКХНСО обновлены"
     }
+  },
+  "entity": {
+    "sensor": {
+      "meter": {
+        "name": "Счётчик {type_name} №{serial_number} ({account_id})"
+      },
+      "tariff": {
+        "name": "Тариф {name} ({account_id})"
+      }
+    }
   }
 }
