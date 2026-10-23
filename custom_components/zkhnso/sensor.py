@@ -20,7 +20,7 @@ from .coordinator import ZKHDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-WATER_UNITS = {"куб.м.", "куб.м", "м³", "m³"}
+VOLUME_UNITS = {"куб.м.", "куб.м", "м³", "m³"}
 ELECTRIC_UNITS = {"кВтч", "кВт·ч", "кВт⋅ч", "kWh"}
 HEAT_UNITS = {"Гкал", "Gcal"}
 PARALLEL_UPDATES = 0
@@ -106,20 +106,24 @@ class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
         )
         self._attr_name = f"{meter_name} ({account_id})"
         self._attr_icon = "mdi:counter"
+        self._attr_state_class = SensorStateClass.TOTAL
 
-        if meter_data.get("units") in WATER_UNITS:
-            self._attr_device_class = SensorDeviceClass.WATER
+        meter_name_lower = str(meter_name).casefold()
+
+        if meter_data.get("units") in VOLUME_UNITS:
+            if "вода" in meter_name_lower:
+                self._attr_device_class = SensorDeviceClass.WATER
+            elif "газ" in meter_name_lower:
+                self._attr_device_class = SensorDeviceClass.GAS
+            else:
+                self._attr_device_class = SensorDeviceClass.VOLUME
             self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
-            # A provider can correct or reset the total reading.
-            self._attr_state_class = SensorStateClass.TOTAL
         elif meter_data.get("units") in ELECTRIC_UNITS:
             self._attr_device_class = SensorDeviceClass.ENERGY
             self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
-            self._attr_state_class = SensorStateClass.TOTAL
         elif meter_data.get("units") in HEAT_UNITS:
             self._attr_device_class = SensorDeviceClass.ENERGY
             self._attr_native_unit_of_measurement = UnitOfEnergy.GIGA_CALORIE
-            self._attr_state_class = SensorStateClass.TOTAL
 
     @property
     def native_value(self) -> float | None:
