@@ -10,11 +10,19 @@ ZKHNSO integration for Home Assistant. Can be used for integrating housing servi
 
 ## Установка
 
+### HACS
+
+[![Откройте свой экземпляр Home Assistant и перейдите к репозиторию в магазине Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=zebooka&repository=hacs-zkhnso&category=integration)
+
+1. Откройте **HACS** в Home Assistant и выполните поиск по запросу `ЖКХНСО` (или воспользуйтесь кнопкой выше).
+2. Откройте `ЖКХНСО`, выберите **Скачать** (Download) и подтвердите действие.
+3. Перезапустите Home Assistant, а затем перейдите к разделу [Настройка](#Настройка).
+
 ### HACS: пользовательский репозиторий
 
 1. В HACS откройте **⋮ → Пользовательские репозитории**.
 2. Добавьте `https://github.com/zebooka/hacs-zkhnso` с типом **Integration**.
-3. Найдите **ZKHNSO** и установите интеграцию.
+3. Найдите **ЖКХНСО** и установите интеграцию.
 4. Перезапустите Home Assistant.
 5. Добавьте интеграцию через **Настройки → Устройства и службы**.
 
@@ -30,7 +38,7 @@ ZKHNSO integration for Home Assistant. Can be used for integrating housing servi
 
 1. Откройте Настройки → Устройства и службы
 2. Нажмите "+ Добавить интеграцию"
-3. Поищите "ЖКХНСО"
+3. Поищите **ЖКХНСО**
 4. Заполните параметры учётной записи
 
 Используются логин и пароль от личного кабинета ЖКХНСО. Данные проверяются до создания интеграции. Если пароль изменился, Home Assistant предложит повторно пройти аутентификацию.
