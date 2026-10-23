@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .const import CONF_USERNAME
 from .coordinator import ZKHDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -150,7 +151,9 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self.tariff_key = tariff_key
         self._attr_unique_id = f"{self.coordinator.entry.entry_id}_tariff_{tariff_key}"
-        self._attr_name = tariff_data.get("name", f"Tariff {tariff_key}")
+        tariff_name = tariff_data.get("name", f"Tariff {tariff_key}")
+        username = self.coordinator.entry.data[CONF_USERNAME]
+        self._attr_name = f"{tariff_name} {username}"
         unit = tariff_data.get("unit")
         self._attr_native_unit_of_measurement = f"RUB/{unit}" if unit else "RUB"
         self._attr_icon = "mdi:currency-rub"

@@ -41,7 +41,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         if not await client.login():
             raise InvalidAuth
 
-    return {"title": f"ZKHNSO {username}", "username": username}
+    return {"title": f"ЖКХНСО {username}", "username": username}
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
