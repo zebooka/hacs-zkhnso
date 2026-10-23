@@ -8,7 +8,6 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api_client import ZKHAPIClient
@@ -37,9 +36,7 @@ class ZKHDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Fetch data, translating service failures into Home Assistant errors."""
         username = self.entry.data[CONF_USERNAME]
         password = self.entry.data[CONF_PASSWORD]
-        session = async_get_clientsession(self.hass)
-
-        async with ZKHAPIClient(username, password, session) as client:
+        async with ZKHAPIClient(username, password) as client:
             if not await client.preflight():
                 raise UpdateFailed("Failed to initialize ZKHNSO session")
 

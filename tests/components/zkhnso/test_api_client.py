@@ -4,7 +4,7 @@ from custom_components.zkhnso.api_client import ZKHAPIClient
 
 def test_process_meters_preserves_fractional_reading() -> None:
     """Meter values retain fractional readings from the portal."""
-    client = ZKHAPIClient("user", "password", None)
+    client = ZKHAPIClient("user", "password")
 
     result = client._process_meters_data(
         [

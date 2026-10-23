@@ -31,21 +31,31 @@ class ZKHAPIClient:
             self,
             username: str,
             password: str,
-            session: aiohttp.ClientSession,
     ) -> None:
-        """Initialize the API client."""
+        """Initialize the API client with an isolated HTTP session."""
         self.username = username
         self.password = password
-        self.session = session
+        self.session: aiohttp.ClientSession | None = None
         self.jsessionid: str | None = None
         self.form_token: str | None = None
 
     async def __aenter__(self) -> ZKHAPIClient:
-        """Async context manager entry."""
+        """Create an HTTP session and cookie jar isolated to this client."""
+        self.session = aiohttp.ClientSession(cookie_jar=aiohttp.CookieJar())
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Leave the shared Home Assistant session open."""
+        """Close the HTTP session and discard its account-specific cookies."""
+        if self.session is not None:
+            await self.session.close()
+            self.session = None
+
+    @property
+    def _session(self) -> aiohttp.ClientSession:
+        """Return the active session, requiring use as an async context manager."""
+        if self.session is None:
+            raise RuntimeError("ZKHAPIClient must be used as an async context manager")
+        return self.session
 
     async def preflight(self) -> dict[str, str] | None:
         """Perform preflight request to get FORM_TOKEN and JSESSIONID.
@@ -56,7 +66,7 @@ class ZKHAPIClient:
         url = urljoin(API_BASE_URL, API_URL_PREFLIGHT)
 
         try:
-            async with self.session.get(url) as response:
+            async with self._session.get(url) as response:
                 if response.status != 200:
                     _LOGGER.error(
                         "Preflight request to url %s failed with status %d", url, response.status
@@ -214,7 +224,7 @@ class ZKHAPIClient:
         _LOGGER.debug("Login: %s", self.username)
 
         try:
-            async with self.session.post(
+            async with self._session.post(
                     url, data=form_payload, headers=headers
             ) as response:
                 response_text = await response.text()
@@ -279,7 +289,7 @@ class ZKHAPIClient:
         }
 
         try:
-            async with self.session.get(url, headers=headers) as response:
+            async with self._session.get(url, headers=headers) as response:
                 if response.status != 200:
                     _LOGGER.error(
                         "Tariffs request to url %s failed with status %d", url, response.status
@@ -508,7 +518,7 @@ class ZKHAPIClient:
         }
 
         try:
-            async with self.session.get(url, headers=headers) as response:
+            async with self._session.get(url, headers=headers) as response:
                 if response.status != 200:
                     _LOGGER.error(
                         "Meters request to url %s failed with status %d", url, response.status

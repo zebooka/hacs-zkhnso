@@ -10,7 +10,6 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api_client import ZKHAPIClient
 from .const import CONF_PASSWORD, CONF_USERNAME, DOMAIN
@@ -35,7 +34,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     if not username or not password.strip():
         raise InvalidAuth
 
-    async with ZKHAPIClient(username, password, async_get_clientsession(hass)) as client:
+    async with ZKHAPIClient(username, password) as client:
         if not await client.preflight():
             raise CannotConnect
         if not await client.login():
