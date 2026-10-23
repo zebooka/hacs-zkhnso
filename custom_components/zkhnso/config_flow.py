@@ -53,7 +53,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         raise AccountParseError
 
     return {
-        "title": f"ЛС {account_id} {address}",
+        "title": f"№{account_id} {address}",
         "username": username,
         "account_id": account_id,
         "address": address,
