@@ -38,6 +38,7 @@ class ZKHAPIClient:
         self.session: aiohttp.ClientSession | None = None
         self.jsessionid: str | None = None
         self.form_token: str | None = None
+        self.address: str | None = None
 
     async def __aenter__(self) -> ZKHAPIClient:
         """Create an HTTP session and cookie jar isolated to this client."""
@@ -237,6 +238,12 @@ class ZKHAPIClient:
                     _LOGGER.debug("JSESSIONID updated after login")
 
                 if response.status == 200 and not self._is_login_page(response_text):
+                    address = html_to_json_simple(
+                        response_text,
+                        ".header .address",
+                    )
+                    if isinstance(address, str):
+                        self.address = " ".join(address.split()) or None
                     _LOGGER.debug("Login response accepted")
                     return True
 
