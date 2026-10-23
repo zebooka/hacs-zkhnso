@@ -66,7 +66,8 @@ class ZKHAPIClient:
                 # Extract JSESSIONID from Set-Cookie header
                 jsessionid = self._extract_jsessionid(response.headers)
                 if not jsessionid:
-                    _LOGGER.warning("JSESSIONID not found in response")
+                    _LOGGER.warning("JSESSIONID not found in preflight response")
+                    return None
 
                 # Get HTML content
                 html_content = await response.text()
@@ -88,7 +89,7 @@ class ZKHAPIClient:
                 _LOGGER.debug("Preflight successful, session initialized")
 
                 return {
-                    SESSION_JSESSIONID: jsessionid or "",
+                    SESSION_JSESSIONID: jsessionid,
                     SESSION_FORM_TOKEN: form_token,
                 }
 
@@ -145,6 +146,31 @@ class ZKHAPIClient:
         ]
         return ("; ".join(parts) + ";") if parts else ""
 
+    @staticmethod
+    def _is_login_page(html_content: str) -> bool:
+        """Return whether an HTML response contains the login form."""
+        return (
+            'id="loginForm"' in html_content
+            or "id='loginForm'" in html_content
+            or 'name="loginToken"' in html_content
+            or "name='loginToken'" in html_content
+        )
+
+    @staticmethod
+    def _log_page_diagnostics(
+        page_name: str, response: aiohttp.ClientResponse, html_content: str
+    ) -> None:
+        """Log safe response markers without exposing response content or secrets."""
+        _LOGGER.debug(
+            "%s response: status=%d, url=%s, login_form=%s, counters_form=%s, "
+            "tariffs_form=%s",
+            page_name,
+            response.status,
+            response.url,
+            ZKHAPIClient._is_login_page(html_content),
+            'id="countersForm"' in html_content or "id='countersForm'" in html_content,
+            'id="tariffsForm"' in html_content or "id='tariffsForm'" in html_content,
+        )
 
     async def login(self) -> bool:
         """Perform login after preflight.
@@ -177,7 +203,11 @@ class ZKHAPIClient:
         )
 
         masked_form_payload = urlencode(
-            {**query, "userPass": "*" * len(self.password)},
+            {
+                **query,
+                "loginToken": "*" * len(self.form_token),
+                "userPass": "*" * len(self.password),
+            },
             doseq=False,
             encoding="utf-8",
             safe="",
@@ -200,30 +230,25 @@ class ZKHAPIClient:
             async with self.session.post(
                 url, data=form_payload, headers=headers
             ) as response:
+                response_text = await response.text()
+                self._log_page_diagnostics("Login", response, response_text)
+
                 # Extract updated JSESSIONID from response
                 updated_jsessionid = self._extract_jsessionid(response.headers)
                 if updated_jsessionid:
                     self.jsessionid = updated_jsessionid
                     _LOGGER.debug("JSESSIONID updated after login")
-                else:
-                    _LOGGER.warning("JSESSIONID not found in response")
 
-                # Check if login was successful
-                # Typically, successful login returns 200 or redirects
-                if response.status in (200, 302):
-                    _LOGGER.debug("Login successful with status %d", response.status)
+                if response.status == 200 and not self._is_login_page(response_text):
+                    _LOGGER.debug("Login response accepted")
                     return True
-                else:
-                    _LOGGER.error(
-                        "Login failed with status %d", response.status
-                    )
-                    # Log response body for debugging
-                    try:
-                        response_text = await response.text()
-                        _LOGGER.debug("Login response: %s", response_text[:500])
-                    except Exception:
-                        pass
-                    return False
+
+                _LOGGER.warning(
+                    "Login was not accepted: status=%d, login_form=%s",
+                    response.status,
+                    self._is_login_page(response_text),
+                )
+                return False
 
         except aiohttp.ClientError as e:
             _LOGGER.error("Error during login request to url %s: %s", url, e)
@@ -275,6 +300,11 @@ class ZKHAPIClient:
                     return None
 
                 html_content = await response.text()
+                self._log_page_diagnostics("Tariffs", response, html_content)
+
+                if self._is_login_page(html_content):
+                    _LOGGER.warning("Tariffs response returned the login page")
+                    return None
 
                 # Extract table rows
                 rows = extract_table_rows_with_children(
@@ -575,6 +605,11 @@ class ZKHAPIClient:
                     return None
 
                 html_content = await response.text()
+                self._log_page_diagnostics("Meters", response, html_content)
+
+                if self._is_login_page(html_content):
+                    _LOGGER.warning("Meters response returned the login page")
+                    return None
 
                 # Extract table rows
                 rows = extract_table_rows_with_children(
