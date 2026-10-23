@@ -186,33 +186,20 @@ class ZKHAPIClient:
         preflight_url = urljoin(API_BASE_URL, API_URL_PREFLIGHT)
 
         # Prepare form data
-        query = {
-            "struts.token.name": "loginToken",
-            "loginToken": self.form_token,
-            "userName": self.username,
-            "userPass": self.password,
-            "captchaCode": "x",
-            "timezone": "-420",
-            "loginModule": "lk",
-        }
         form_payload = urlencode(
-            query,
-            doseq=False,
-            encoding="utf-8",
-            safe="",
-        )
-
-        masked_form_payload = urlencode(
             {
-                **query,
-                "loginToken": "*" * len(self.form_token),
-                "userPass": "*" * len(self.password),
+                "struts.token.name": "loginToken",
+                "loginToken": self.form_token,
+                "userName": self.username,
+                "userPass": self.password,
+                "captchaCode": "x",
+                "timezone": "-420",
+                "loginModule": "lk",
             },
             doseq=False,
             encoding="utf-8",
             safe="",
         )
-
         # Prepare headers
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -224,7 +211,7 @@ class ZKHAPIClient:
         if login_cookie:
             headers["Cookie"] = login_cookie
 
-        _LOGGER.debug("Login form payload: %s", masked_form_payload)
+        _LOGGER.debug("Login: %s", self.username)
 
         try:
             async with self.session.post(
