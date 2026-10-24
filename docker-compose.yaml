@@ -1,7 +1,7 @@
 services:
   homeassistant:
     container_name: homeassistant-zkhnso
-    image: "ghcr.io/home-assistant/home-assistant:2024.11"
+    image: "ghcr.io/home-assistant/home-assistant:2024.12"
     volumes:
       - ./.hass:/config
       - ./custom_components/zkhnso:/config/custom_components/zkhnso
