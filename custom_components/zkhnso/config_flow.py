@@ -46,17 +46,14 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         if not await client.login():
             raise InvalidAuth
 
-        address = client.address
-        account_id = client.account_id
-
-    if account_id is None or not address:
+    if client.account_id is None or not client.address:
         raise AccountParseError
 
     return {
-        "title": f"№{account_id} {address}",
+        "title": f"№{client.account_id} {client.address}",
         "username": username,
-        "account_id": account_id,
-        "address": address,
+        "account_id": client.account_id,
+        "address": client.address,
     }
 
 

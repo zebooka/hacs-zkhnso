@@ -27,11 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 class ZKHAPIClient:
     """Client for interacting with ZKHNSO API."""
 
-    def __init__(
-            self,
-            username: str,
-            password: str,
-    ) -> None:
+    def __init__(self, username: str, password: str) -> None:
         """Initialize the API client with an isolated HTTP session."""
         self.username = username
         self.password = password
@@ -60,42 +56,26 @@ class ZKHAPIClient:
         return self.session
 
     async def preflight(self) -> dict[str, str] | None:
-        """Perform preflight request to get FORM_TOKEN and JSESSIONID.
-
-        Returns:
-            Dictionary with JSESSIONID and FORM_TOKEN, or None on error
-        """
+        """Perform preflight request to get FORM_TOKEN and JSESSIONID."""
         url = urljoin(API_BASE_URL, API_URL_PREFLIGHT)
 
         try:
             async with self._session.get(url) as response:
                 if response.status != 200:
-                    _LOGGER.error(
-                        "Preflight request to url %s failed with status %d", url, response.status
-                    )
+                    _LOGGER.error("Preflight request to url %s failed with status %d", url, response.status)
                     return None
 
-                # Extract JSESSIONID from Set-Cookie header
                 jsessionid = self._extract_jsessionid(response.headers)
                 if not jsessionid:
                     _LOGGER.warning("JSESSIONID not found in preflight response")
                     return None
+                self.jsessionid = jsessionid
 
-                # Get HTML content
                 html_content = await response.text()
-
-                # Extract FORM_TOKEN from HTML
-                form_token = html_to_json_simple(
-                    html_content,
-                    "#loginForm input[name=loginToken]",
-                    attribute="value",
-                )
-
+                form_token = html_to_json_simple(html_content, "#loginForm input[name=loginToken]", attribute="value")
                 if not form_token:
                     _LOGGER.error("FORM_TOKEN not found in HTML response")
                     return None
-
-                self.jsessionid = jsessionid
                 self.form_token = form_token
 
                 _LOGGER.debug("Preflight successful, session initialized")
@@ -113,19 +93,10 @@ class ZKHAPIClient:
             return None
 
     def _extract_jsessionid(self, headers: Any) -> str | None:
-        """Extract JSESSIONID from Set-Cookie header.
-
-        Args:
-            headers: Response headers object
-
-        Returns:
-            JSESSIONID value or None if not found
-        """
+        """Extract JSESSIONID from Set-Cookie header."""
         cookies = headers.getall("Set-Cookie", [])
         for cookie in cookies:
             if "JSESSIONID=" in cookie:
-                # Extract JSESSIONID value
-                # Format: JSESSIONID=value; Path=/; ...
                 parts = cookie.split(";")
                 for part in parts:
                     part = part.strip()
@@ -134,29 +105,15 @@ class ZKHAPIClient:
         return None
 
     def _get_authenticated_cookies(self) -> dict[str, str]:
-        """Get cookies for authenticated requests (includes userLogin and loginModule)."""
-        cookies = {
+        """Return application cookies for authenticated requests.
+
+        Server-issued session cookies, including JSESSIONID, are managed by the
+        isolated aiohttp CookieJar and must not be replaced manually.
+        """
+        return {
             "userLogin": self.username,
             "loginModule": "lk",
         }
-        if self.jsessionid:
-            cookies["JSESSIONID"] = self.jsessionid
-        return cookies
-
-    def _build_login_cookie_header(self) -> str:
-        """Build cookie header for login request using JSESSIONID from preflight."""
-        if not self.jsessionid:
-            return ""
-        return f"JSESSIONID={self.jsessionid};"
-
-    def _build_cookie_header(self, cookies: dict[str, str]) -> str:
-        """Build a Cookie header string from cookies dictionary."""
-        parts = [
-            f"{key}={value}"
-            for key, value in cookies.items()
-            if value is not None
-        ]
-        return ("; ".join(parts) + ";") if parts else ""
 
     @staticmethod
     def _is_login_page(html_content: str) -> bool:
@@ -169,9 +126,7 @@ class ZKHAPIClient:
         )
 
     @staticmethod
-    def _log_page_diagnostics(
-            page_name: str, response: aiohttp.ClientResponse, html_content: str
-    ) -> None:
+    def _log_page_diagnostics(page_name: str, response: aiohttp.ClientResponse, html_content: str) -> None:
         """Log safe response markers without exposing response content or secrets."""
         _LOGGER.debug(
             "%s response: status=%d, url=%s, login_form=%s, counters_form=%s, "
@@ -185,19 +140,12 @@ class ZKHAPIClient:
         )
 
     async def login(self) -> bool:
-        """Perform login after preflight.
-
-        Returns:
-            True if login successful, False otherwise
-        """
+        """Perform login after preflight."""
         if not self.form_token or not self.jsessionid:
             _LOGGER.error("Preflight must be called before login")
             return False
 
         url = urljoin(API_BASE_URL, API_URL_LOGIN)
-        preflight_url = urljoin(API_BASE_URL, API_URL_PREFLIGHT)
-
-        # Prepare form data
         form_payload = urlencode(
             {
                 "struts.token.name": "loginToken",
@@ -212,44 +160,34 @@ class ZKHAPIClient:
             encoding="utf-8",
             safe="",
         )
-        # Prepare headers
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "Origin": API_BASE_URL,
-            "Referer": preflight_url,
+            "Referer": urljoin(API_BASE_URL, API_URL_PREFLIGHT),
         }
-
-        login_cookie = self._build_login_cookie_header()
-        if login_cookie:
-            headers["Cookie"] = login_cookie
 
         _LOGGER.debug("Login: %s", self.username)
 
         try:
             async with self._session.post(
-                    url, data=form_payload, headers=headers
+                    url,
+                    data=form_payload,
+                    headers=headers,
             ) as response:
                 response_text = await response.text()
                 self._log_page_diagnostics("Login", response, response_text)
 
-                # Extract updated JSESSIONID from response
                 updated_jsessionid = self._extract_jsessionid(response.headers)
                 if updated_jsessionid:
                     self.jsessionid = updated_jsessionid
                     _LOGGER.debug("JSESSIONID updated after login")
 
                 if response.status == 200 and not self._is_login_page(response_text):
-                    address = html_to_json_simple(
-                        response_text,
-                        ".header .address",
-                    )
+                    address = html_to_json_simple(response_text, ".header .address")
                     if isinstance(address, str):
                         self.address = " ".join(address.split()) or None
 
-                    account_id = html_to_json_simple(
-                        response_text,
-                        ".header .account span",
-                    )
+                    account_id = html_to_json_simple(response_text, ".header .account span")
                     if isinstance(account_id, str):
                         account_id = "".join(account_id.split())
                         if account_id.isdecimal():
@@ -272,120 +210,90 @@ class ZKHAPIClient:
             _LOGGER.exception("Unexpected error during login to url %s: %s", url, e)
             return False
 
-    async def get_tariffs(self) -> dict[str, Any] | None:
-        """Fetch tariffs data.
+    async def get_meters(self) -> dict[str, Any] | None:
+        """Fetch meters/counters data."""
+        url = urljoin(API_BASE_URL, API_URL_METERS)
+        rows = await self.get_data(url, "#countersForm table tr", "Meters")
+        return self._process_meters_data(rows) if rows is not None else None
 
-        Returns:
-            Parsed tariffs data with structure:
-            {
-                "tariffs": {
-                    "tariff_name": {
-                        "name": "...",
-                        "norm": 123.45,
-                        "unit": "куб.м.",
-                        "rate": 67.89,
-                        "date": "YYYY-MM-DD"
-                    }
-                }
-            }
-            or None on error
-        """
+    async def get_tariffs(self) -> dict[str, Any] | None:
+        """Fetch tariffs data."""
+        url = urljoin(API_BASE_URL, API_URL_TARIFFS)
+        rows = await self.get_data(url, "#tariffsForm table tr", "Tariffs")
+        return self._process_tariffs_data(rows) if rows is not None else None
+
+    async def get_data(self, url: str, selector: str, page_name: str) -> list[list[str]] | None:
+        """Fetch an authenticated page and extract rows from its table."""
         if not self.jsessionid:
-            _LOGGER.error("Must be logged in to fetch tariffs")
+            _LOGGER.error("Must be logged in to fetch %s", page_name.casefold())
             return None
 
-        url = urljoin(API_BASE_URL, API_URL_TARIFFS)
-        referer_url = urljoin(API_BASE_URL, API_URL_MAIN)
-
-        cookies = self._get_authenticated_cookies()
-        cookie_header = self._build_cookie_header(cookies)
-
-        # Prepare headers
-        headers = {
-            "Cookie": cookie_header,
-            "Referer": referer_url,
-        }
-
         try:
-            async with self._session.get(url, headers=headers) as response:
+            async with self._session.get(
+                url,
+                headers={"Referer": urljoin(API_BASE_URL, API_URL_MAIN)},
+                cookies=self._get_authenticated_cookies(),
+            ) as response:
                 if response.status != 200:
                     _LOGGER.error(
-                        "Tariffs request to url %s failed with status %d", url, response.status
+                        "%s request to url %s failed with status %d",
+                        page_name,
+                        url,
+                        response.status,
                     )
                     return None
 
                 html_content = await response.text()
-                self._log_page_diagnostics("Tariffs", response, html_content)
-
+                self._log_page_diagnostics(page_name, response, html_content)
                 if self._is_login_page(html_content):
-                    _LOGGER.warning("Tariffs response returned the login page")
+                    _LOGGER.warning("%s response returned the login page", page_name)
                     return None
 
-                # Extract table rows
-                rows = extract_table_rows_with_children(
-                    html_content, "#tariffsForm table tr"
-                )
-
+                rows = extract_table_rows_with_children(html_content, selector)
                 if not rows:
-                    _LOGGER.warning("No tariff table rows found at %s", url)
-                    return {"tariffs": {}}
+                    _LOGGER.warning("No %s table rows found at %s", page_name.casefold(), url)
+                    return []
 
-                # Process rows into tariffs data
-                return self._process_tariffs_data(rows)
-
-        except aiohttp.ClientError as e:
-            _LOGGER.error("Error during tariffs request: %s", e)
+                return rows
+        except aiohttp.ClientError as err:
+            _LOGGER.error("Error during %s request: %s", page_name.casefold(), err)
             return None
-        except Exception as e:
-            _LOGGER.exception("Unexpected error during tariffs fetch: %s", e)
+        except Exception as err:
+            _LOGGER.exception("Unexpected error during %s fetch: %s", page_name.casefold(), err)
+            return None
+
+    def _parse_float(self, value_str: str) -> float | None:
+        """Extract and parse float value from string."""
+        if not value_str:
+            return None
+
+        try:
+            return float(value_str.replace("\u00a0", "").replace(" ", "").replace(",", "."))
+        except (ValueError, TypeError) as e:
+            _LOGGER.warning("Failed to parse float value '%s': %s", value_str, e)
             return None
 
     def _parse_date(self, date_str: str, format_in: str = "%d.%m.%Y") -> str | None:
-        """Parse date string and convert to ISO format (YYYY-MM-DD).
-
-        Args:
-            date_str: Date string to parse
-            format_in: Input date format (default: DD.MM.YYYY)
-
-        Returns:
-            ISO format date string (YYYY-MM-DD) or None on error
-        """
+        """Parse date string and convert to ISO format (YYYY-MM-DD)."""
         try:
-            dt = datetime.strptime(date_str.strip(), format_in)
-            return dt.strftime("%Y-%m-%d")
+            return datetime.strptime(date_str.strip(), format_in).strftime("%Y-%m-%d")
         except (ValueError, AttributeError) as e:
             _LOGGER.warning("Failed to parse date '%s': %s", date_str, e)
             return None
 
     def _sanitize_serial_number(self, serial: str) -> str:
-        """Sanitize serial number for use as key (replace non-digits with underscore).
-
-        Args:
-            serial: Serial number string
-
-        Returns:
-            Sanitized serial number
-        """
+        """Sanitize serial number for use as key (replace non-digits with underscore)."""
         return re.sub(r"[^0-9]", "_", serial)
 
     def _process_meters_data(self, rows: list[list[str]]) -> dict[str, Any]:
-        """Process table rows into meters data structure (similar to JQ transformation).
-
-        Args:
-            rows: List of table rows, where each row is a list of cell text values
-
-        Returns:
-            Dictionary with meters and max date
-        """
+        """Process table rows into meters data structure."""
         if not rows or len(rows) < 2:
-            return {"meters": {}, "date": None}
+            return {"meters": {}, "max_date": None}
 
-        # Skip first row (header) - [1:]
-        data_rows = rows[1:]
         meters = {}
         dates = []
 
-        for row in data_rows:
+        for row in rows[1:]:
             _LOGGER.debug("Row: %s", row)
             if len(row) < 9:
                 _LOGGER.warning("Row has insufficient columns: %s", row)
@@ -393,17 +301,17 @@ class ZKHAPIClient:
 
             try:
                 key = self._sanitize_serial_number(row[1].strip())
-                value_date = self._parse_date(row[3].strip())
+                date = self._parse_date(row[3].strip())
 
-                if value_date:
-                    dates.append(value_date)
+                if date:
+                    dates.append(date)
 
                 meter = {
                     "name": row[0].strip(),
                     "serial_number": row[1].strip(),
                     "unit": row[2].strip(),
                     "value": self._parse_float(row[4].strip()),
-                    "date": value_date,
+                    "date": date,
                     "next_verification_date": self._parse_date(row[8].strip()),
                 }
 
@@ -420,27 +328,19 @@ class ZKHAPIClient:
         }
 
     def _process_tariffs_data(self, rows: list[list[str]]) -> dict[str, Any]:
-        """Process table rows into tariffs data structure
-
-        Args:
-            rows: List of table rows, where each row is a list of cell text values
-
-        Returns:
-            Dictionary with tariffs data
-        """
+        """Process table rows into tariffs data structure."""
         if not rows or len(rows) < 2:
             return {"tariffs": {}}
 
-        # Skip first row (header) - [1:]
-        data_rows = rows[1:]
         tariffs = {}
 
-        for row in data_rows:
+        for row in rows[1:]:
             if len(row) < 5:
                 _LOGGER.warning("Tariff row has insufficient columns: %s", row)
                 continue
 
             try:
+                key = row[0].strip()
                 tariff = {
                     "name": row[0].strip(),
                     "norm": self._parse_float(row[1].strip()),
@@ -450,8 +350,7 @@ class ZKHAPIClient:
                 }
 
                 _LOGGER.debug("Processed tariff: %s", tariff)
-
-                tariffs[tariff["name"]] = tariff
+                tariffs[key] = tariff
 
             except (IndexError, AttributeError) as e:
                 _LOGGER.warning("Error processing tariff row %s: %s", row, e)
@@ -459,84 +358,6 @@ class ZKHAPIClient:
 
         return {"tariffs": tariffs}
 
-    def _parse_float(self, value_str: str) -> float | None:
-        """Extract and parse float value from string.
 
-        Args:
-            value_str: Value string (may contain nbsp, spaces and commas)
 
-        Returns:
-            Parsed value as float or None on error
-        """
-        if not value_str:
-            return None
 
-        try:
-            return float(value_str.replace("\u00a0", "").replace(" ", "").replace(",", "."))
-        except (ValueError, TypeError) as e:
-            _LOGGER.warning("Failed to parse float value '%s': %s", value_str, e)
-            return None
-
-    async def get_meters(self) -> dict[str, Any] | None:
-        """Fetch meters/counters data.
-
-        Returns:
-            Parsed meters data with structure:
-            {
-                "meters": {
-                    "serial_key": {
-                        "type_name": "...",
-                        "serial_number": "...",
-                        "units": "...",
-                        "value": 123,
-                        "value_date": "YYYY-MM-DD",
-                        "next_verification_date": "YYYY-MM-DD"
-                    }
-                },
-                "date": "YYYY-MM-DD"  # max value_date
-            }
-            or None on error
-        """
-        if not self.jsessionid:
-            _LOGGER.error("Must be logged in to fetch meters")
-            return None
-
-        url = urljoin(API_BASE_URL, API_URL_METERS)
-        headers = {
-            "Cookie": self._build_cookie_header(self._get_authenticated_cookies()),
-            "Referer": urljoin(API_BASE_URL, API_URL_MAIN),
-        }
-
-        try:
-            async with self._session.get(url, headers=headers) as response:
-                if response.status != 200:
-                    _LOGGER.error(
-                        "Meters request to url %s failed with status %d", url, response.status
-                    )
-                    return None
-
-                html_content = await response.text()
-                self._log_page_diagnostics("Meters", response, html_content)
-
-                if self._is_login_page(html_content):
-                    _LOGGER.warning("Meters response returned the login page")
-                    return None
-
-                # Extract table rows
-                rows = extract_table_rows_with_children(
-                    html_content, "#countersForm table tr"
-                )
-
-                if not rows:
-                    _LOGGER.warning("No meter table rows found at %s", url)
-                    return {"meters": {}, "date": None}
-
-                # Process rows into meters data
-                return self._process_meters_data(rows)
-
-        except aiohttp.ClientError as e:
-            _LOGGER.error("Error during meters request: %s", e)
-            return None
-        except Exception as e:
-            _LOGGER.exception("Unexpected error during meters fetch: %s", e)
-            return None

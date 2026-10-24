@@ -14,3 +14,14 @@ def test_process_meters_preserves_fractional_reading() -> None:
     )
 
     assert result["meters"]["123"]["value"] == 12.34
+
+
+def test_authenticated_cookies_exclude_session_cookie() -> None:
+    """The cookie jar, rather than manual headers, manages JSESSIONID."""
+    client = ZKHAPIClient("user", "password")
+    client.jsessionid = "session-id"
+
+    assert client._get_authenticated_cookies() == {
+        "userLogin": "user",
+        "loginModule": "lk",
+    }
