@@ -399,11 +399,11 @@ class ZKHAPIClient:
                     dates.append(value_date)
 
                 meter = {
-                    "type_name": row[0].strip(),
+                    "name": row[0].strip(),
                     "serial_number": row[1].strip(),
-                    "units": row[2].strip(),
+                    "unit": row[2].strip(),
                     "value": self._parse_float(row[4].strip()),
-                    "value_date": value_date,
+                    "date": value_date,
                     "next_verification_date": self._parse_date(row[8].strip()),
                 }
 
@@ -416,7 +416,7 @@ class ZKHAPIClient:
 
         return {
             "meters": meters,
-            "date": max(dates) if dates else None,
+            "max_date": max(dates) if dates else None,
         }
 
     def _process_tariffs_data(self, rows: list[list[str]]) -> dict[str, Any]:
@@ -446,7 +446,7 @@ class ZKHAPIClient:
                     "norm": self._parse_float(row[1].strip()),
                     "unit": row[2].strip(),
                     "rate": self._parse_float(row[3].strip()),
-                    "date": self._parse_date(row[4].strip()),
+                    "from_date": self._parse_date(row[4].strip()),
                 }
 
                 _LOGGER.debug("Processed tariff: %s", tariff)
@@ -502,15 +502,9 @@ class ZKHAPIClient:
             return None
 
         url = urljoin(API_BASE_URL, API_URL_METERS)
-        referer_url = urljoin(API_BASE_URL, API_URL_MAIN)
-
-        cookies = self._get_authenticated_cookies()
-        cookie_header = self._build_cookie_header(cookies)
-
-        # Prepare headers
         headers = {
-            "Cookie": cookie_header,
-            "Referer": referer_url,
+            "Cookie": self._build_cookie_header(self._get_authenticated_cookies()),
+            "Referer": urljoin(API_BASE_URL, API_URL_MAIN),
         }
 
         try:

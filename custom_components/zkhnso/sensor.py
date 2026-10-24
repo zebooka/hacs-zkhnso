@@ -61,8 +61,8 @@ async def async_setup_entry(
         tariffs = coordinator.data["tariffs"]
         if tariffs and isinstance(tariffs, dict) and len(tariffs) > 0:
             tariff_entities = [
-                ZKHTariffSensor(coordinator, tariff_key, tariff_data)
-                for tariff_key, tariff_data in tariffs.items()
+                ZKHTariffSensor(coordinator, key, tariff)
+                for key, tariff in tariffs.items()
             ]
             entities.extend(tariff_entities)
             _LOGGER.info("Created %d tariff sensors", len(tariff_entities))
@@ -92,30 +92,24 @@ class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
     def __init__(
         self,
         coordinator: ZKHDataUpdateCoordinator,
-        meter_key: str,
-        meter_data: dict,
+        key: str,
+        meter: dict,
     ) -> None:
         """Initialize the meter sensor."""
         super().__init__(coordinator)
-
-        self.meter_key = meter_key
-        self._attr_unique_id = f"{self.coordinator.entry.entry_id}_meter_{meter_key}"
-        meter_name = meter_data.get("name", meter_key)
-        account_id = self.coordinator.entry.data.get(
-            CONF_ACCOUNT_ID,
-            self.coordinator.entry.data[CONF_USERNAME],
-        )
+        self.key = key
+        self._attr_unique_id = f"{self.coordinator.entry.entry_id}_meter_{key}"
         self._attr_translation_key = "meter"
         self._attr_translation_placeholders = {
-            "name": str(meter_name),
-            "account_id": str(account_id),
+            "name": str(meter.get("name", key)),
+            "account_id": str(self.coordinator.entry.data.get(CONF_ACCOUNT_ID)),
         }
         self._attr_icon = "mdi:counter"
         self._attr_state_class = SensorStateClass.TOTAL
 
-        meter_name_lower = str(meter_name).casefold()
-
-        if meter_data.get("units") in VOLUME_UNITS:
+        meter_name_lower = str(meter.get("name")).casefold()
+        unit = meter.get("unit")
+        if unit in VOLUME_UNITS:
             if "вода" in meter_name_lower:
                 self._attr_device_class = SensorDeviceClass.WATER
             elif "газ" in meter_name_lower:
@@ -123,41 +117,40 @@ class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
             else:
                 self._attr_device_class = SensorDeviceClass.VOLUME
             self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
-        elif meter_data.get("units") in ELECTRIC_UNITS:
+        elif unit in ELECTRIC_UNITS:
             self._attr_device_class = SensorDeviceClass.ENERGY
             self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
-        elif meter_data.get("units") in HEAT_UNITS:
+        elif unit in HEAT_UNITS:
             self._attr_device_class = SensorDeviceClass.ENERGY
             self._attr_native_unit_of_measurement = UnitOfEnergy.GIGA_CALORIE
 
     @property
-    def native_value(self) -> float | None:
-        """Return the state of the sensor (meter value)."""
-        if not self.coordinator.data or "meters" not in self.coordinator.data:
+    def meter(self) -> dict | None:
+        """Return current meter data from the coordinator."""
+        if not self.coordinator.data:
             return None
 
-        meters = self.coordinator.data["meters"]
-        meter = meters.get(self.meter_key)
-        if meter and isinstance(meter.get("value"), int | float):
-            return meter["value"]
-        return None
+        meters = self.coordinator.data.get("meters", {})
+        return meters.get(self.key) if isinstance(meters, dict) else None
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current meter value."""
+        meter = self.meter
+        return meter.get("value") if meter is not None else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return extra state attributes."""
-        if not self.coordinator.data or "meters" not in self.coordinator.data:
-            return {}
-
-        meters = self.coordinator.data["meters"]
-        meter = meters.get(self.meter_key)
-        if not meter:
+        """Return current meter attributes."""
+        meter = self.meter
+        if meter is None:
             return {}
 
         return {
-            "type_name": meter.get("type_name"),
+            "name": meter.get("name"),
             "serial_number": meter.get("serial_number"),
-            "units": meter.get("units"),
-            "value_date": meter.get("value_date"),
+            "unit": meter.get("unit"),
+            "date": meter.get("date"),
             "next_verification_date": meter.get("next_verification_date"),
         }
 
@@ -168,32 +161,54 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
     def __init__(
         self,
         coordinator: ZKHDataUpdateCoordinator,
-        tariff_key: str,
-        tariff_data: dict,
+        key: str,
+        tariff: dict,
     ) -> None:
         """Initialize the tariff sensor."""
         super().__init__(coordinator)
-        self.tariff_key = tariff_key
-        self._attr_unique_id = f"{self.coordinator.entry.entry_id}_tariff_{tariff_key}"
-        tariff_name = tariff_data.get("name", tariff_key)
-        account_id = self.coordinator.entry.data.get(
-            CONF_ACCOUNT_ID,
-            self.coordinator.entry.data[CONF_USERNAME],
-        )
+        self.key = key
+        self._attr_unique_id = f"{self.coordinator.entry.entry_id}_tariff_{key}"
         self._attr_translation_key = "tariff"
         self._attr_translation_placeholders = {
-            "name": str(tariff_name),
-            "account_id": str(account_id),
+            "name": str(tariff.get("name", key)),
+            "account_id": str(self.coordinator.entry.data.get(CONF_ACCOUNT_ID)),
         }
-        unit = tariff_data.get("unit")
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_native_unit_of_measurement = "RUB"
-        self._tariff_unit = self._normalized_tariff_unit(unit)
         self._attr_icon = "mdi:currency-rub"
 
+    @property
+    def tariff(self) -> dict | None:
+        """Return current tariff data from the coordinator."""
+        if not self.coordinator.data:
+            return None
+
+        tariffs = self.coordinator.data.get("tariffs", {})
+        return tariffs.get(self.key) if isinstance(tariffs, dict) else None
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current tariff value."""
+        tariff = self.tariff
+        return tariff.get("rate_per_unit") if tariff is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return current tariff attributes."""
+        tariff = self.tariff
+        if tariff is None:
+            return {}
+
+        return {
+            "name": tariff.get("name"),
+            "norm": tariff.get("norm"),
+            "unit": tariff.get("unit"),
+            "normalized_unit": self._normalized_unit(tariff.get("unit")),
+            "from_date": tariff.get("from_date"),
+        }
+
     @staticmethod
-    def _normalized_tariff_unit(unit: str | None) -> str:
-        """Return a normalized tariff unit using the meter unit mappings."""
+    def _normalized_unit(unit: str | None) -> str:
         if unit in SQUARE_UNITS:
             return f"RUB/{UnitOfArea.SQUARE_METERS}"
         if unit in VOLUME_UNITS:
@@ -203,34 +218,3 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
         if unit in HEAT_UNITS:
             return f"RUB/{UnitOfEnergy.GIGA_CALORIE}"
         return f"RUB/{unit}" if unit else "RUB"
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the state of the sensor (tariff value)."""
-        if not self.coordinator.data or "tariffs" not in self.coordinator.data:
-            return None
-
-        tariffs = self.coordinator.data["tariffs"]
-        tariff = tariffs.get(self.tariff_key)
-        if tariff and isinstance(tariff.get("rate"), int | float):
-            return tariff["rate"]
-        return None
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return extra state attributes."""
-        if not self.coordinator.data or "tariffs" not in self.coordinator.data:
-            return {}
-
-        tariffs = self.coordinator.data["tariffs"]
-        tariff = tariffs.get(self.tariff_key)
-        if not tariff:
-            return {}
-
-        return {
-            "name": tariff.get("name"),
-            "norm": tariff.get("norm"),
-            "unit": tariff.get("unit"),
-            "tariff_unit": self._tariff_unit,
-            "tariff_date": tariff.get("date"),
-        }
