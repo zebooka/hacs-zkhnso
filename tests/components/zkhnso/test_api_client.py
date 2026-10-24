@@ -42,9 +42,9 @@ def test_process_tariffs_numbers_duplicate_names() -> None:
         ]
     )
 
-    assert list(result["tariffs"]) == ["А", "Б 1", "Б 2"]
-    assert result["tariffs"]["Б 1"]["name"] == "Б 1"
-    assert result["tariffs"]["Б 2"]["name"] == "Б 2"
+    assert list(result["tariffs"]) == ["А", "Б №1", "Б №2"]
+    assert result["tariffs"]["Б №1"]["name"] == "Б №1"
+    assert result["tariffs"]["Б №2"]["name"] == "Б №2"
 
 
 def test_api_client_parsing_helpers() -> None:

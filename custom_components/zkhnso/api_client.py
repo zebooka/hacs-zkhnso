@@ -348,7 +348,7 @@ class ZKHAPIClient:
                 name_occurrences[base_name] = name_occurrences.get(base_name, 0) + 1
                 occurrence = name_occurrences[base_name]
                 name = (
-                    f"{base_name} {occurrence}"
+                    f"{base_name} №{occurrence}"
                     if name_counts[base_name] > 1
                     else base_name
                 )
