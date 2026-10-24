@@ -178,8 +178,7 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
             "name": str(tariff.get("name", key)),
             "account_id": str(self.coordinator.entry.data.get(CONF_ACCOUNT_ID)),
         }
-        self._attr_device_class = SensorDeviceClass.MONETARY
-        self._attr_native_unit_of_measurement = "RUB"
+        self._attr_native_unit_of_measurement = self._normalized_unit(tariff.get("unit"))
         self._attr_icon = "mdi:currency-rub"
 
     @property
@@ -208,7 +207,6 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
             "name": tariff.get("name"),
             "norm": tariff.get("norm"),
             "unit": tariff.get("unit"),
-            "normalized_unit": self._normalized_unit(tariff.get("unit")),
             "from_date": tariff.get("from_date"),
         }
 

@@ -51,9 +51,28 @@ def test_tariff_uses_current_data_and_clears_removed_tariff() -> None:
     sensor = ZKHTariffSensor(coordinator, "Water", tariff)
 
     assert sensor.native_value == 50.25
-    assert sensor.device_class == SensorDeviceClass.MONETARY
-    assert sensor.extra_state_attributes["normalized_unit"] == "RUB/m³"
+    assert sensor.device_class is None
+    assert sensor.native_unit_of_measurement == "RUB/m³"
 
     coordinator.data = {"tariffs": {}}
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
+
+
+def test_tariff_price_units_match_resource_units() -> None:
+    """Tariffs expose Energy Dashboard-compatible prices per resource unit."""
+    cases = [
+        ("куб.м.", "RUB/m³"),
+        ("кВтч", "RUB/kWh"),
+        ("Гкал", "RUB/Gcal"),
+        ("кв.м.", "RUB/m²"),
+    ]
+    for index, (unit, expected_unit) in enumerate(cases):
+        tariff = {"name": f"Tariff {index}", "unit": unit, "rate_per_unit": 1}
+        sensor = ZKHTariffSensor(
+            _coordinator({"tariffs": {str(index): tariff}}),
+            str(index),
+            tariff,
+        )
+        assert sensor.device_class is None
+        assert sensor.native_unit_of_measurement == expected_unit

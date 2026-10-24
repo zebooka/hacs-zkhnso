@@ -136,7 +136,6 @@ template:
       - name: tariff_hot_water
         unique_id: tariff_hot_water
         icon: "mdi:chart-box-outline"
-        device_class: monetary
         state: >
           {{ (
             (states('sensor.tariff_otved_stoch_vod_soi_1234567890') | float(0))
@@ -150,11 +149,10 @@ template:
             and states('sensor.tariff_gv_na_soi_teplonosit_1234567890') not in ['unknown', 'unavailable', 'none']
             and states('sensor.tariff_gv_na_soi_podogrev_1234567890') not in ['unknown', 'unavailable', 'none']
           }}
-        unit_of_measurement: "RUB"
+        unit_of_measurement: "RUB/m³"
       - name: tariff_cold_water
         unique_id: tariff_cold_water
         icon: "mdi:chart-box-outline"
-        device_class: monetary
         state: >
           {{ (
             (states('sensor.tariff_otved_stoch_vod_soi_1234567890') | float(0))
@@ -165,7 +163,7 @@ template:
             states('sensor.tariff_otved_stoch_vod_soi_1234567890') not in ['unknown', 'unavailable', 'none']
             and states('sensor.tariff_khv_na_sod_e_obshch_imushch_1234567890') not in ['unknown', 'unavailable', 'none']
           }}
-        unit_of_measurement: "RUB"
+        unit_of_measurement: "RUB/m³"
 ```
 
 ## Ограничения и устранение неполадок
