@@ -14,7 +14,6 @@ from .api_client import ZKHAPIClient
 from .const import CONF_PASSWORD, CONF_USERNAME, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
-
 SCAN_INTERVAL = timedelta(hours=1)
 
 
@@ -34,22 +33,19 @@ class ZKHDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data, translating service failures into Home Assistant errors."""
-        username = self.entry.data[CONF_USERNAME]
-        password = self.entry.data[CONF_PASSWORD]
-        async with ZKHAPIClient(username, password) as client:
+        async with ZKHAPIClient(self.entry.data[CONF_USERNAME], self.entry.data[CONF_PASSWORD]) as client:
             if not await client.preflight():
                 raise UpdateFailed("Failed to initialize ZKHNSO session")
 
             if not await client.login():
                 raise ConfigEntryAuthFailed("Invalid ZKHNSO credentials")
 
-            meters_data = await client.get_meters()
-            if meters_data is None:
-                raise UpdateFailed("Failed to fetch ZKHNSO meter data")
+            meters = await client.get_meters()
+            if meters is None:
+                raise UpdateFailed("Failed to fetch ZKHNSO meters data")
 
-            tariffs_data = await client.get_tariffs()
-            if tariffs_data is None:
-                _LOGGER.warning("Failed to fetch ZKHNSO tariff data")
-                tariffs_data = {"tariffs": {}}
+            tariffs = await client.get_tariffs()
+            if tariffs is None:
+                raise UpdateFailed("Failed to fetch ZKHNSO tariffs data")
 
-        return {**meters_data, **tariffs_data}
+        return {**meters, **tariffs}
