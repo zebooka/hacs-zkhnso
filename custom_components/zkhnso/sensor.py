@@ -89,6 +89,8 @@ async def async_setup_entry(
 class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
     """Representation of a ZKH meter sensor."""
 
+    _attr_has_entity_name = True
+
     def __init__(
         self,
         coordinator: ZKHDataUpdateCoordinator,
@@ -102,6 +104,7 @@ class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
         self._attr_translation_key = "meter"
         self._attr_translation_placeholders = {
             "name": str(meter.get("name", key)),
+            "serial_number": str(meter.get("serial_number")),
             "account_id": str(self.coordinator.entry.data.get(CONF_ACCOUNT_ID)),
         }
         self._attr_icon = "mdi:counter"
@@ -157,6 +160,8 @@ class ZKHMeterSensor(CoordinatorEntity, SensorEntity):
 
 class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
     """Representation of a ZKH tariff sensor."""
+
+    _attr_has_entity_name = True
 
     def __init__(
         self,
