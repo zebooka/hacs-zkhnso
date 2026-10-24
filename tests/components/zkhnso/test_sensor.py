@@ -45,8 +45,8 @@ def test_meter_device_classes() -> None:
 
 
 def test_tariff_uses_current_data_and_clears_removed_tariff() -> None:
-    """Tariffs use `rate` and clear stale state when removed."""
-    tariff = {"name": "Water", "unit": "куб.м.", "rate": 50.25, "norm": 3, "from_date": "2026-01-01"}
+    """Tariffs use `rate_per_unit` and clear stale state when removed."""
+    tariff = {"name": "Water", "unit": "куб.м.", "rate_per_unit": 50.25, "norm": 3, "from_date": "2026-01-01"}
     coordinator = _coordinator({"tariffs": {"Water": tariff}})
     sensor = ZKHTariffSensor(coordinator, "Water", tariff)
 

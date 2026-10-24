@@ -357,7 +357,7 @@ class ZKHAPIClient:
                     "name": name,
                     "norm": self._parse_float(row[1].strip()),
                     "unit": row[2].strip(),
-                    "rate": self._parse_float(row[3].strip()),
+                    "rate_per_unit": self._parse_float(row[3].strip()),
                     "from_date": self._parse_date(row[4].strip()),
                 }
 
@@ -369,6 +369,5 @@ class ZKHAPIClient:
                 continue
 
         return {"tariffs": tariffs}
-
 
 
