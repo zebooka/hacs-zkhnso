@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections import Counter
 from datetime import datetime
 from typing import Any
 from urllib.parse import urlencode, urljoin
@@ -332,6 +333,9 @@ class ZKHAPIClient:
         if not rows or len(rows) < 2:
             return {"tariffs": {}}
 
+        valid_rows = [row for row in rows[1:] if len(row) >= 5]
+        name_counts = Counter(row[0].strip() for row in valid_rows)
+        name_occurrences: dict[str, int] = {}
         tariffs = {}
 
         for row in rows[1:]:
@@ -340,9 +344,17 @@ class ZKHAPIClient:
                 continue
 
             try:
-                key = row[0].strip()
+                base_name = row[0].strip()
+                name_occurrences[base_name] = name_occurrences.get(base_name, 0) + 1
+                occurrence = name_occurrences[base_name]
+                name = (
+                    f"{base_name} {occurrence}"
+                    if name_counts[base_name] > 1
+                    else base_name
+                )
+
                 tariff = {
-                    "name": row[0].strip(),
+                    "name": name,
                     "norm": self._parse_float(row[1].strip()),
                     "unit": row[2].strip(),
                     "rate": self._parse_float(row[3].strip()),
@@ -350,14 +362,13 @@ class ZKHAPIClient:
                 }
 
                 _LOGGER.debug("Processed tariff: %s", tariff)
-                tariffs[key] = tariff
+                tariffs[name] = tariff
 
             except (IndexError, AttributeError) as e:
                 _LOGGER.warning("Error processing tariff row %s: %s", row, e)
                 continue
 
         return {"tariffs": tariffs}
-
 
 
 
