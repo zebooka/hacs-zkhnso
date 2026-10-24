@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
-<img src="https://github.com/zebooka/hacs-zkhnso/blob/master/assets/logo.png?raw=true" srcset="https://github.com/zebooka/hacs-zkhnso/blob/master/assets/logo.png?raw=true 1x, https://github.com/zebooka/hacs-zkhnso/blob/master/assets/logo@2x.png?raw=true 2x, https://github.com/zebooka/hacs-zkhnso/blob/master/assets/logo.svg?raw=true 3x" alt="ЖКХНСО" width="128"/>
+<img src="https://github.com/zebooka/hacs-zkhnso/blob/master/assets/logo@2x.png?raw=true" alt="ЖКХНСО" width="128"/>
 
 ZKHNSO integration for Home Assistant. Can be used for integrating housing services in Russian Federation, Novosibirsk oblast. 
 
