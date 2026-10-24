@@ -195,7 +195,7 @@ class ZKHTariffSensor(CoordinatorEntity, SensorEntity):
     def native_value(self) -> float | None:
         """Return the current tariff value."""
         tariff = self.tariff
-        return tariff.get("rate_per_unit") if tariff is not None else None
+        return tariff.get("rate") if tariff is not None else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
