@@ -1,12 +1,19 @@
+[English](/README.en.md) | [Русский](/README.md)
+
 # Интеграция ЖКХНСО для Home Assistant
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+<p>
+  <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5" alt="HACS Custom"/></a>
+  <img src="https://img.shields.io/github/v/release/zebooka/hass-zkhnso?label=release&color=blue" alt="Release"/>
+  <img src="https://img.shields.io/badge/Home%20Assistant-2024.11%2B-blue?logo=home-assistant" alt="Home Assistant"/>
+  <img src="https://img.shields.io/github/license/zebooka/hass-zkhnso?color=green" alt="License"/>
+  <img src="https://img.shields.io/badge/Custom%20Integration-orange" alt="Custom Integration"/>
+  <img src="https://img.shields.io/badge/Русский%20язык-yes-blue" alt="Russian language"/>
+</p>
 
 <img src="https://github.com/zebooka/hacs-zkhnso/blob/master/assets/logo@2x.png?raw=true" alt="ЖКХНСО" width="128"/>
 
-ZKHNSO integration for Home Assistant. Can be used for integrating housing services in Russian Federation, Novosibirsk oblast. 
-
-Интеграция ЖКХНСО.рф для Home Assistant для получения информации о счетчиках и тарифах.
+Интеграция ЖКХНСО.рф для Home Assistant для получения информации о счетчиках и тарифах в Российской Федерации, Новосибирской области.
 
 ## Установка
 
@@ -180,8 +187,6 @@ template:
 ## Лицензия
 
 Этот проект распространяется под открытой лицензией MIT.
-
-This project is licensed under the MIT License.
 
 ## Спасибо
 
