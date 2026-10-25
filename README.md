@@ -2,14 +2,13 @@
 
 # Интеграция ЖКХНСО для Home Assistant
 
-<p>
-  <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5" alt="HACS Custom"/></a>
-  <img src="https://img.shields.io/github/v/release/zebooka/hass-zkhnso?label=release&color=blue" alt="Release"/>
-  <img src="https://img.shields.io/badge/Home%20Assistant-2024.12%2B-blue?logo=home-assistant" alt="Home Assistant"/>
-  <img src="https://img.shields.io/github/license/zebooka/hass-zkhnso?color=green" alt="License"/>
-  <img src="https://img.shields.io/badge/Custom%20Integration-orange" alt="Custom Integration"/>
-  <img src="https://img.shields.io/badge/Русский%20язык-yes-blue" alt="Russian language"/>
-</p>
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5)](https://hacs.xyz)
+[![Release](https://img.shields.io/github/v/release/zebooka/hass-zkhnso?label=release&color=blue)](https://github.com/zebooka/hass-zkhnso/releases/latest)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.12%2B-blue?logo=home-assistant)
+[![License](https://img.shields.io/github/license/zebooka/hass-zkhnso?color=green)](https://github.com/zebooka/hass-zkhnso/blob/master/LICENSE)
+![Custom Integration](https://img.shields.io/badge/Custom%20Integration-blue)
+[![Спонсировать на Cloudtips](https://img.shields.io/badge/donate-cloudtips-FFDD2D.svg)](https://pay.cloudtips.ru/p/34ce579c)
+![Русский язык](https://img.shields.io/badge/Русский%20язык-yes-blue)
 
 <img src="https://github.com/zebooka/hacs-zkhnso/blob/master/custom_components/zkhnso/brand/logo@2x.png?raw=true" alt="ЖКХНСО" width="128"/>
 
