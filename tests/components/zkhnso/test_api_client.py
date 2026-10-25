@@ -15,7 +15,7 @@ def test_process_meters_preserves_fractional_reading() -> None:
         ]
     )
 
-    assert result["meters"]["123"]["value"] == 12.34
+    assert result["123"]["value"] == 12.34
 
 
 def test_authenticated_cookies_exclude_session_cookie() -> None:
@@ -42,9 +42,9 @@ def test_process_tariffs_numbers_duplicate_names() -> None:
         ]
     )
 
-    assert list(result["tariffs"]) == ["А", "Б №1", "Б №2"]
-    assert result["tariffs"]["Б №1"]["name"] == "Б №1"
-    assert result["tariffs"]["Б №2"]["name"] == "Б №2"
+    assert list(result) == ["А", "Б №1", "Б №2"]
+    assert result["Б №1"]["name"] == "Б №1"
+    assert result["Б №2"]["name"] == "Б №2"
 
 
 def test_api_client_parsing_helpers() -> None:
@@ -77,5 +77,5 @@ def test_process_data_skips_invalid_rows() -> None:
         [["header"], ["incomplete"], ["Water", "1", "куб.м.", "2", "01.01.2026"]]
     )
 
-    assert list(meters["meters"]) == ["42"]
-    assert list(tariffs["tariffs"]) == ["Water"]
+    assert list(meters) == ["42"]
+    assert list(tariffs) == ["Water"]

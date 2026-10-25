@@ -292,7 +292,6 @@ class ZKHAPIClient:
             return {"meters": {}, "max_date": None}
 
         meters = {}
-        dates = []
 
         for row in rows[1:]:
             _LOGGER.debug("Row: %s", row)
@@ -302,17 +301,12 @@ class ZKHAPIClient:
 
             try:
                 key = self._sanitize_serial_number(row[1].strip())
-                date = self._parse_date(row[3].strip())
-
-                if date:
-                    dates.append(date)
-
                 meter = {
                     "name": row[0].strip(),
                     "serial_number": row[1].strip(),
                     "unit": row[2].strip(),
                     "value": self._parse_float(row[4].strip()),
-                    "date": date,
+                    "date": self._parse_date(row[3].strip()),
                     "next_verification_date": self._parse_date(row[8].strip()),
                 }
 
@@ -323,10 +317,7 @@ class ZKHAPIClient:
                 _LOGGER.warning("Error processing row %s: %s", row, e)
                 continue
 
-        return {
-            "meters": meters,
-            "max_date": max(dates) if dates else None,
-        }
+        return meters
 
     def _process_tariffs_data(self, rows: list[list[str]]) -> dict[str, Any]:
         """Process table rows into tariffs data structure."""
@@ -368,6 +359,6 @@ class ZKHAPIClient:
                 _LOGGER.warning("Error processing tariff row %s: %s", row, e)
                 continue
 
-        return {"tariffs": tariffs}
+        return tariffs
 
 

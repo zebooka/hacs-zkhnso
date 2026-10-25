@@ -48,4 +48,7 @@ class ZKHDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if tariffs is None:
                 raise UpdateFailed("Failed to fetch ZKHNSO tariffs data")
 
-        return {**meters, **tariffs}
+        return {
+            "meters": meters,
+            "tariffs": tariffs,
+        }
