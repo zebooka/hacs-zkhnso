@@ -35,9 +35,9 @@ sh: ## Go inside HA container
 ##@ Development
 
 logo: ## Generate PNG logo assets from SVG (requires ImageMagick)
-	magick -background none -define svg:background-color=none assets/logo.svg -resize 128x128 assets/logo.png
-	magick -background none -define svg:background-color=none assets/logo.svg -resize 256x256 assets/logo@2x.png
-	magick -background none -define svg:background-color=none assets/logo.svg -resize 512x512 custom_components/zkhnso/brand/icon@2x.png
+	magick -density 192 -background none -define svg:background-color=none assets/logo.svg -resize 128x128 assets/logo.png
+	magick -density 192 -background none -define svg:background-color=none assets/logo.svg -resize 256x256 assets/logo@2x.png
+	magick -density 192 -background none -define svg:background-color=none assets/logo.svg -resize 512x512 custom_components/zkhnso/brand/icon@2x.png
 	test `uname` = 'Darwin' && /Applications/ImageOptim.app/Contents/MacOS/ImageOptim assets/logo.png assets/logo@2x.png custom_components/zkhnso/brand/icon@2x.png || true
 	cp assets/logo@2x.png custom_components/zkhnso/brand/icon.png
 	cp custom_components/zkhnso/brand/icon.png custom_components/zkhnso/brand/logo.png
