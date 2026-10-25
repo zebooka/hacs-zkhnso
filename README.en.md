@@ -5,13 +5,13 @@
 <p>
   <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5" alt="HACS Custom"/></a>
   <img src="https://img.shields.io/github/v/release/zebooka/hass-zkhnso?label=release&color=blue" alt="Release"/>
-  <img src="https://img.shields.io/badge/Home%20Assistant-2024.11%2B-blue?logo=home-assistant" alt="Home Assistant"/>
+  <img src="https://img.shields.io/badge/Home%20Assistant-2024.12%2B-blue?logo=home-assistant" alt="Home Assistant"/>
   <img src="https://img.shields.io/github/license/zebooka/hass-zkhnso?color=green" alt="License"/>
   <img src="https://img.shields.io/badge/Custom%20Integration-orange" alt="Custom Integration"/>
   <img src="https://img.shields.io/badge/Russian%20language-yes-blue" alt="Russian language"/>
 </p>
 
-<img src="https://github.com/zebooka/hacs-zkhnso/blob/master/assets/logo@2x.png?raw=true" alt="ZKHNSO" width="128"/>
+<img src="https://github.com/zebooka/hacs-zkhnso/blob/master/custom_components/zkhnso/brand/logo@2x.png?raw=true" alt="ZKHNSO" width="128"/>
 
 An integration for the ЖКХНСО.рф housing and utility service in Home Assistant. It provides meter and tariff information for Novosibirsk Oblast, Russian Federation.
 
