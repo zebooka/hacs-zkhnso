@@ -295,7 +295,7 @@ class ZKHAPIClient:
 
         for row in rows[1:]:
             _LOGGER.debug("Row: %s", row)
-            if len(row) < 9:
+            if len(row) < 6:
                 _LOGGER.warning("Row has insufficient columns: %s", row)
                 continue
 
@@ -307,7 +307,9 @@ class ZKHAPIClient:
                     "unit": row[2].strip(),
                     "value": self._parse_float(row[4].strip()),
                     "date": self._parse_date(row[3].strip()),
-                    "next_verification_date": self._parse_date(row[8].strip()),
+                    "next_verification_date": self._parse_date(
+                        row[8].strip() if len(row) >= 9 else row[5].strip()
+                    ),
                 }
 
                 _LOGGER.debug("Meter %s: %s", key, meter)
@@ -360,5 +362,4 @@ class ZKHAPIClient:
                 continue
 
         return tariffs
-
 

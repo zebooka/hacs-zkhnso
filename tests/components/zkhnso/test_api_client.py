@@ -18,6 +18,41 @@ def test_process_meters_preserves_fractional_reading() -> None:
     assert result["123"]["value"] == 12.34
 
 
+def test_process_meters_supports_both_counter_row_formats() -> None:
+    """The verification date location depends on whether a reading was sent today."""
+    client = ZKHAPIClient("user", "password")
+
+    result = client._process_meters_data(
+        [
+            ["header"],
+            [
+                "гор.вода",
+                "26_16185541",
+                "куб.м.",
+                "21.10.2026",
+                "0.016",
+                "",
+                "",
+                "",
+                "02.06.2028",
+                "История",
+            ],
+            [
+                "гор.вода",
+                "22-157073",
+                "куб.м.",
+                "25.10.2026",
+                "172.000",
+                "02.06.2028",
+                "История",
+            ],
+        ]
+    )
+
+    assert result["26_16185541"]["next_verification_date"] == "2028-06-02"
+    assert result["22_157073"]["next_verification_date"] == "2028-06-02"
+
+
 def test_authenticated_cookies_exclude_session_cookie() -> None:
     """The cookie jar, rather than manual headers, manages JSESSIONID."""
     client = ZKHAPIClient("user", "password")
