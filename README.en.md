@@ -13,7 +13,7 @@
 
 <img src="https://github.com/zebooka/hacs-zkhnso/blob/master/assets/logo@2x.png?raw=true" alt="ZKHNSO" width="128"/>
 
-An integration for the ZKHNSO.rf housing and utility service in Home Assistant. It provides meter and tariff information for Novosibirsk Oblast, Russian Federation.
+An integration for the ЖКХНСО.рф housing and utility service in Home Assistant. It provides meter and tariff information for Novosibirsk Oblast, Russian Federation.
 
 ## Installation
 
@@ -21,15 +21,15 @@ An integration for the ZKHNSO.rf housing and utility service in Home Assistant. 
 
 [![Open your Home Assistant instance and show the repository in the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=zebooka&repository=hacs-zkhnso&category=integration)
 
-1. Open **HACS** in Home Assistant and search for **ZKHNSO** (or use the button above).
-2. Open **ZKHNSO**, select **Download**, and confirm the action.
+1. Open **HACS** in Home Assistant and search for **ЖКХНСО** (or use the button above).
+2. Open **ЖКХНСО**, select **Download**, and confirm the action.
 3. Restart Home Assistant, then continue with [Configuration](#configuration).
 
 ### HACS: Custom repository
 
 1. In HACS, open **⋮ → Custom repositories**.
 2. Add `https://github.com/zebooka/hacs-zkhnso` with type **Integration**.
-3. Find **ZKHNSO** and install the integration.
+3. Find **ЖКХНСО** and install the integration.
 4. Restart Home Assistant.
 5. Add the integration in **Settings → Devices & services**.
 
@@ -45,7 +45,7 @@ This integration is configured through the Home Assistant user interface:
 
 1. Open **Settings → Devices & services**.
 2. Select `+ Add integration`.
-3. Search for **ZKHNSO**.
+3. Search for **ЖКХНСО**.
 4. Enter your account credentials.
 
 Use the username and password from your ZKHNSO personal account. Credentials are validated before the integration entry is created. If the password changes, Home Assistant prompts you to reauthenticate.
@@ -60,38 +60,22 @@ Data is updated once per hour. The integration creates entities for the meter re
 ## Calculating meter costs
 
 To calculate water costs in the **Energy** dashboard, create a template sensor manually.
+This is necessary because the tariff list provided by the management company does not contain complete water prices. 
+It lists the heat carrier, water heating, water supply, and wastewater tariffs separately. 
+For example, the hot-water price can be calculated as:
+`wastewater tariff + heat-carrier tariff + water-heating tariff × coefficient` or as `wastewater tariff + hot-water tariff`. 
+The cold-water price can be calculated as: `wastewater tariff + cold-water tariff`. Management companies use different 
+tariff names. Calculating water costs may require selecting tariffs for common property maintenance. Example tariff names:
+`ГВ НА СОИ (ПОДОГРЕВ)`,
+`ГВ НА СОИ (ТЕПЛОНОСИТ)`,
+`ГВ НА СОД-Е ОБЩ.ИМУЩ.`,
+`ГОРЯЧЕЕ ВОДОСНАБЖЕНИЕ (ПОДОГРЕВ)`,
+`ОТВЕД. СТОЧ. ВОД СОИ`,
+`ХВ НА СОД-Е ОБЩ.ИМУЩ.`,
+`ХОЛОДНОЕ ВОДОСНАБЖЕНИЕ`.
 
-This is necessary because the tariff list provided by the management company does not contain complete water prices. It lists the heat carrier, water heating, water supply, and wastewater tariffs separately. For example, the hot-water price can be calculated as:
-
-```text
-wastewater tariff + heat-carrier tariff + water-heating tariff × coefficient
-```
-
-or as:
-
-```text
-wastewater tariff + hot-water tariff
-```
-
-The cold-water price can be calculated as:
-
-```text
-wastewater tariff + cold-water tariff
-```
-
-Management companies use different tariff names. Calculating water costs may require selecting tariffs for common property maintenance. Example tariff names:
-
-```text
-ГВ НА СОИ (ПОДОГРЕВ)
-ГВ НА СОИ (ТЕПЛОНОСИТ)
-ГВ НА СОД-Е ОБЩ.ИМУЩ.
-ГОРЯЧЕЕ ВОДОСНАБЖЕНИЕ (ПОДОГРЕВ)
-ОТВЕД. СТОЧ. ВОД СОИ
-ХВ НА СОД-Е ОБЩ.ИМУЩ.
-ХОЛОДНОЕ ВОДОСНАБЖЕНИЕ
-```
-
-The coefficient for the hot-water formula that includes water heating must be entered manually, depending on the type of your water supply system. It is established by legislation of Novosibirsk Oblast and, at the time this README was written, is:
+The coefficient for the hot-water formula that includes water heating must be entered manually, depending on the type of
+your water supply system. It is established by legislation of Novosibirsk Oblast and, at the time this README was written, is:
 
 <table>
 <thead>
