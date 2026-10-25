@@ -1,0 +1,188 @@
+[English](/README.en.md) | [Русский](/README.md)
+
+# ZKHNSO Integration for Home Assistant
+
+<p>
+  <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5" alt="HACS Custom"/></a>
+  <img src="https://img.shields.io/github/v/release/zebooka/hass-zkhnso?label=release&color=blue" alt="Release"/>
+  <img src="https://img.shields.io/badge/Home%20Assistant-2024.11%2B-blue?logo=home-assistant" alt="Home Assistant"/>
+  <img src="https://img.shields.io/github/license/zebooka/hass-zkhnso?color=green" alt="License"/>
+  <img src="https://img.shields.io/badge/Custom%20Integration-orange" alt="Custom Integration"/>
+  <img src="https://img.shields.io/badge/Russian%20language-yes-blue" alt="Russian language"/>
+</p>
+
+<img src="https://github.com/zebooka/hacs-zkhnso/blob/master/assets/logo@2x.png?raw=true" alt="ZKHNSO" width="128"/>
+
+An integration for the ZKHNSO.rf housing and utility service in Home Assistant. It provides meter and tariff information for Novosibirsk Oblast, Russian Federation.
+
+## Installation
+
+### HACS
+
+[![Open your Home Assistant instance and show the repository in the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=zebooka&repository=hacs-zkhnso&category=integration)
+
+1. Open **HACS** in Home Assistant and search for **ZKHNSO** (or use the button above).
+2. Open **ZKHNSO**, select **Download**, and confirm the action.
+3. Restart Home Assistant, then continue with [Configuration](#configuration).
+
+### HACS: Custom repository
+
+1. In HACS, open **⋮ → Custom repositories**.
+2. Add `https://github.com/zebooka/hacs-zkhnso` with type **Integration**.
+3. Find **ZKHNSO** and install the integration.
+4. Restart Home Assistant.
+5. Add the integration in **Settings → Devices & services**.
+
+### Manual installation
+
+1. Copy the `zkhnso` directory to your Home Assistant `custom_components` directory.
+2. Restart Home Assistant.
+3. Add the integration in **Settings → Devices & services**.
+
+## Configuration
+
+This integration is configured through the Home Assistant user interface:
+
+1. Open **Settings → Devices & services**.
+2. Select `+ Add integration`.
+3. Search for **ZKHNSO**.
+4. Enter your account credentials.
+
+Use the username and password from your ZKHNSO personal account. Credentials are validated before the integration entry is created. If the password changes, Home Assistant prompts you to reauthenticate.
+
+## Features
+
+- Retrieves active meters, including serial number, meter type, next verification date, current reading, and the date of the most recent reading submission.
+- Retrieves tariffs and usage norms.
+
+Data is updated once per hour. The integration creates entities for the meter readings and tariffs available in the personal account when the integration is set up.
+
+## Calculating meter costs
+
+To calculate water costs in the **Energy** dashboard, create a template sensor manually.
+
+This is necessary because the tariff list provided by the management company does not contain complete water prices. It lists the heat carrier, water heating, water supply, and wastewater tariffs separately. For example, the hot-water price can be calculated as:
+
+```text
+wastewater tariff + heat-carrier tariff + water-heating tariff × coefficient
+```
+
+or as:
+
+```text
+wastewater tariff + hot-water tariff
+```
+
+The cold-water price can be calculated as:
+
+```text
+wastewater tariff + cold-water tariff
+```
+
+Management companies use different tariff names. Calculating water costs may require selecting tariffs for common property maintenance. Example tariff names:
+
+```text
+ГВ НА СОИ (ПОДОГРЕВ)
+ГВ НА СОИ (ТЕПЛОНОСИТ)
+ГВ НА СОД-Е ОБЩ.ИМУЩ.
+ГОРЯЧЕЕ ВОДОСНАБЖЕНИЕ (ПОДОГРЕВ)
+ОТВЕД. СТОЧ. ВОД СОИ
+ХВ НА СОД-Е ОБЩ.ИМУЩ.
+ХОЛОДНОЕ ВОДОСНАБЖЕНИЕ
+```
+
+The coefficient for the hot-water formula that includes water heating must be entered manually, depending on the type of your water supply system. It is established by legislation of Novosibirsk Oblast and, at the time this README was written, is:
+
+<table>
+<thead>
+<tr>
+<th rowspan="3">Apartment building or residential building construction features</th>
+<th colspan="3">Thermal energy consumption standards for heating cold water to provide the hot-water utility service, Gcal per 1 m³</th>
+</tr>
+<tr>
+<th colspan="2">Closed hot-water supply system</th>
+<th>Open heat-supply (hot-water supply) system</th>
+</tr>
+<tr>
+<th>With an external hot-water supply network</th>
+<th>Without an external hot-water supply network</th>
+<th>Without an external hot-water supply network</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Uninsulated risers and heated towel rails</td><td>0.06779</td><td>0.06528</td><td>0.06528</td></tr>
+<tr><td>Insulated risers and heated towel rails</td><td>0.06277</td><td>0.06026</td><td>0.06026</td></tr>
+<tr><td>Uninsulated risers without heated towel rails</td><td>0.06277</td><td>0.06026</td><td>0.06026</td></tr>
+<tr><td>Insulated risers without heated towel rails</td><td>0.05775</td><td>0.05524</td><td>0.05524</td></tr>
+</tbody>
+</table>
+
+You can create a template sensor in two ways: through the user interface or through `configuration.yaml`. The latter is preferable because it allows template editing, but it requires access to the **Home Assistant** file system.
+
+### Creating a template sensor through the user interface
+
+1. Open **Settings → Devices & services**.
+2. Open the **Helpers** tab.
+3. Select `+ Create helper`.
+4. Search for **Template**, then choose the **Sensor** subtype.
+5. Specify the name, state template, unit of measurement (`RUB/m³`), device (**ZKHNSO**), and an availability template in advanced settings.
+
+### Creating a template sensor through configuration.yaml
+
+Add the required sensors to `configuration.yaml`. Example configuration:
+
+```yaml
+template:
+  - sensor:
+      - name: tariff_hot_water
+        unique_id: tariff_hot_water
+        icon: "mdi:chart-box-outline"
+        state: >
+          {{ (
+            (states('sensor.tariff_otved_stoch_vod_soi_1234567890') | float(0))
+            + (states('sensor.tariff_gv_na_soi_teplonosit_1234567890') | float(0))
+            + (states('sensor.tariff_gv_na_soi_podogrev_1234567890') | float(0))
+            * 0.06528
+          ) | round(2) }}
+        availability: >
+          {{
+            states('sensor.tariff_otved_stoch_vod_soi_1234567890') not in ['unknown', 'unavailable', 'none']
+            and states('sensor.tariff_gv_na_soi_teplonosit_1234567890') not in ['unknown', 'unavailable', 'none']
+            and states('sensor.tariff_gv_na_soi_podogrev_1234567890') not in ['unknown', 'unavailable', 'none']
+          }}
+        unit_of_measurement: "RUB/m³"
+      - name: tariff_cold_water
+        unique_id: tariff_cold_water
+        icon: "mdi:chart-box-outline"
+        state: >
+          {{ (
+            (states('sensor.tariff_otved_stoch_vod_soi_1234567890') | float(0))
+            + (states('sensor.tariff_khv_na_sod_e_obshch_imushch_1234567890') | float(0))
+          ) | round(2) }}
+        availability: >
+          {{
+            states('sensor.tariff_otved_stoch_vod_soi_1234567890') not in ['unknown', 'unavailable', 'none']
+            and states('sensor.tariff_khv_na_sod_e_obshch_imushch_1234567890') not in ['unknown', 'unavailable', 'none']
+          }}
+        unit_of_measurement: "RUB/m³"
+```
+
+## Limitations and troubleshooting
+
+- The integration works only with ZKHNSO personal accounts in Novosibirsk Oblast.
+- If the ZKHNSO website is unavailable, Home Assistant retries the connection automatically.
+- After the set of meters or tariffs changes, reload the integration through **Settings → Devices & services** to create entities for new records.
+- To remove the integration, open its page under **Settings → Devices & services** and select **Delete**.
+
+## Support
+
+Report bugs and suggestions through the [GitHub repository](https://github.com/zebooka/hacs-zkhnso).
+
+## License
+
+This project is distributed under the MIT License.
+
+## Thanks
+
+- novodim
+- GPT-5.6 Terra
