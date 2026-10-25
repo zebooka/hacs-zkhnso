@@ -6,9 +6,9 @@
 [![Release](https://img.shields.io/github/v/release/zebooka/hass-zkhnso?label=release&color=blue)](https://github.com/zebooka/hass-zkhnso/releases/latest)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.12%2B-blue?logo=home-assistant)
 [![License](https://img.shields.io/github/license/zebooka/hass-zkhnso?color=green)](https://github.com/zebooka/hass-zkhnso/blob/master/LICENSE)
-![Custom Integration](https://img.shields.io/badge/Custom%20Integration-blue)
+![Custom Integration](https://img.shields.io/badge/Custom%20Integration-orange)
 [![Спонсировать на Cloudtips](https://img.shields.io/badge/donate-cloudtips-FFDD2D.svg)](https://pay.cloudtips.ru/p/34ce579c)
-![Русский язык](https://img.shields.io/badge/Русский%20язык-yes-blue)
+[![Русский язык](https://img.shields.io/badge/Русский%20язык-ДА-red)](https://ru.wikipedia.org/wiki/%D0%9F%D1%83%D1%88%D0%BA%D0%B8%D0%BD,_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80_%D0%A1%D0%B5%D1%80%D0%B3%D0%B5%D0%B5%D0%B2%D0%B8%D1%87)
 
 <img src="https://github.com/zebooka/hacs-zkhnso/blob/master/custom_components/zkhnso/brand/logo@2x.png?raw=true" alt="ЖКХНСО" width="128"/>
 
